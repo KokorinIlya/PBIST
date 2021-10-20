@@ -46,7 +46,7 @@ int main()
     std::cout << "Sequential, elapsed " << res_seq << " milliseconds" << std::endl;
 
     uint64_t res_par = measure(generator, elements_distribution, &calc_sum_parallel, sz, reps);
-    std::cout << "Sequential, elapsed " << res_par << " milliseconds" << std::endl;
+    std::cout << "Parallel, elapsed " << res_par << " milliseconds" << std::endl;
 
     return 0;
 }
