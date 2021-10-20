@@ -11,3 +11,4 @@ libexec/
 pctl/
 share/
 *.out
+.vscode
