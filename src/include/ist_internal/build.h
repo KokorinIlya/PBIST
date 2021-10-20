@@ -53,14 +53,41 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
 
     pasl::pctl::parallel_for(
         0, rep_size + 1, 
-        [block_size] (uint64_t child_idx)
+        [block_size, size_threshold, right, &reps, &children] (uint64_t child_idx)
         {
-            if (child_idx != rep_size)
+            if (child_idx <= rep_size)
             {
-                uint64_t key_idx = static_cast<uint64_t>((child_idx + 1) * block_size + child_idx);
-                reps[child_idx] = {keys[key_idx], true}; 
+                uint64_t start_idx;
+                uint64_t end_idx;
+
+                if (child_idx == 0)
+                {
+                    start_idx = 0;
+                    end_idx = block_size;
+                }
+                else
+                {
+                    start_idx = (child_idx - 1) * (block_size + 1) + block_size;
+                    end_idx = child_idx * (block_size + 1) + block_size;
+                }
+
+                std::unique_ptr<ist_internal_node<T>> cur_child = do_build_from_keys(keys,
+                    start_idx, end_idx, size_threshold);
+                T const& cur_rep = keys[end_idx];
+
+                reps[child_idx] = cur_rep;
+                children[child_idx] = cur_child;
+
             }
-            // TODO: build children
+            else
+            {
+                assert(child_idx == rep_size);
+                uint64_t start_idx = (child_idx - 1) * (block_size + 1) + block_size;
+                uint64_t end_idx = right;
+                std::unique_ptr<ist_internal_node<T>> cur_child = do_build_from_keys(keys,
+                    start_idx, end_idx, size_threshold);
+                children[child_idx] = cur_child;
+            }
         }
     );
 }
