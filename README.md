@@ -16,10 +16,6 @@ Parallel-Batched Interpolation Search Tree
 * `chmod +x ./get.sh`
 * `./get.sh $(pwd)/PBIST`
 
-## Compiling
-* Run from project directory (`/home/ubuntu/PBIST`)
-* ```g++ -std=c++17 `pctl/script/print-include-directives.sh $(pwd)` -fcilkplus -lcilkrts -DUSE_CILK_PLUS_RUNTIME file.cpp -o file.out```
-
 ## Installing OpenCilk
 
 * Run from home directory (`/home/ubuntu/`)
@@ -29,8 +25,12 @@ Parallel-Batched Interpolation Search Tree
 * `cd $(pwd)/build`
 * `cmake -DCMAKE_INSTALL_PREFIX=/home/ubuntu/PBIST -P cmake_install.cmake`
 
+## Compiling
+* Run from project directory (`/home/ubuntu/PBIST`)
+* ```g++ -std=c++17 `pctl/script/print-include-directives.sh $(pwd)` -fcilkplus -lcilkrts -DUSE_CILK_PLUS_RUNTIME file.cpp -o file.out```
+
 ## Compiling via CMake
 
-* Run from project directory (`/home/ubuntu/parallel-algorithms/cilk/`)
+* Run from project directory (`/home/ubuntu/PBIST`)
 * `CC=bin/clang CXX=bin/clang++ cmake .`
 * `make`
