@@ -1,0 +1,13 @@
+CMakeCache.txt
+CMakeFiles/
+Makefile
+bin/
+chunkedseq/
+cmake_install.cmake
+cmdline/
+include/
+lib/
+libexec/
+pctl/
+share/
+*.out
