@@ -18,7 +18,7 @@ Parallel-Batched Interpolation Search Tree
 
 ## Compiling
 * Run from project directory (`/home/ubuntu/PBIST`)
-* `g++ -std=c++17 `pctl/script/print-include-directives.sh $(pwd)` -fcilkplus -lcilkrts -DUSE_CILK_PLUS_RUNTIME file.cpp -o file.out`
+* ```g++ -std=c++17 `pctl/script/print-include-directives.sh $(pwd)` -fcilkplus -lcilkrts -DUSE_CILK_PLUS_RUNTIME file.cpp -o file.out```
 
 ## Installing OpenCilk
 
