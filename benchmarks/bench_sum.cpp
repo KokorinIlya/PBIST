@@ -44,11 +44,11 @@ int main()
     uint32_t sz = 10000000;
     uint32_t reps = 10;
 
-    uint64_t res = measure(generator, elements_distribution, &calc_sum_seq, sz, reps);
-    std::cout << "Sequential, elapsed " << res << " milliseconds" << std::endl;
+    uint64_t res_seq = measure(generator, elements_distribution, &calc_sum_seq, sz, reps);
+    std::cout << "Sequential, elapsed " << res_seq << " milliseconds" << std::endl;
 
-    uint64_t res = measure(generator, elements_distribution, &calc_sum_parallel, sz, reps);
-    std::cout << "Sequential, elapsed " << res << " milliseconds" << std::endl;
+    uint64_t res_par = measure(generator, elements_distribution, &calc_sum_parallel, sz, reps);
+    std::cout << "Sequential, elapsed " << res_par << " milliseconds" << std::endl;
 
     return 0;
 }
