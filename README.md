@@ -25,6 +25,10 @@ Parallel-Batched Interpolation Search Tree
 * `cd $(pwd)/build`
 * `cmake -DCMAKE_INSTALL_PREFIX=/home/ubuntu/PBIST -P cmake_install.cmake`
 
+## Installing Google Tests
+* Run from project directory (`/home/ubuntu/PBIST`)
+* `git clone https://github.com/google/googletest.git tests/lib`
+
 ## Compiling
 * Run from project directory (`/home/ubuntu/PBIST`)
 * ```g++ -std=c++17 `pctl/script/print-include-directives.sh $(pwd)` -fcilkplus -lcilkrts -DUSE_CILK_PLUS_RUNTIME file.cpp -o file.out```
