@@ -12,7 +12,7 @@ include_directories(./)
 
 add_compile_options(-fcilkplus -lcilkrts -DUSE_CILK_PLUS_RUNTIME)
 
-add_executable(sum.out sum.cpp)
-target_link_libraries(sum.out pthread cilkrts)
+add_executable(sum.out src/sum.cpp)
+target_link_libraries(src/sum.out pthread cilkrts)
 
 add_subdirectory(tests)
