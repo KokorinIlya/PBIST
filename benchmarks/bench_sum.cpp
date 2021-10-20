@@ -2,8 +2,6 @@
 #include <chrono>
 #include <random>
 #include <iostream>
-#include <cstdint>
-#include <vector>
 #include <functional>
 
 int32_t calc_sum_seq(pasl::pctl::parray<int32_t> const& arr)
