@@ -8,7 +8,7 @@ Parallel-Batched Interpolation Search Tree
 
 ## Cloning the repository
 * Run from home directory (`/home/ubuntu`)
-* Git clone git@github.com:KokorinIlya/PBIST.git
+* `git clone git@github.com:KokorinIlya/PBIST.git`
 
 ## Installing PCTL
 * Run from home directory (`/home/ubuntu`)
