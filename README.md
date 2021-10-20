@@ -31,7 +31,7 @@ Parallel-Batched Interpolation Search Tree
 
 ## Compiling
 * Run from project directory (`/home/ubuntu/PBIST`)
-* ```g++ -std=c++17 `pctl/script/print-include-directives.sh $(pwd)` -fcilkplus -lcilkrts -DUSE_CILK_PLUS_RUNTIME file.cpp -o file.out```
+* ```bin/clang++ `pctl/script/print-include-directives.sh $(pwd)` -I src/include/  -fcilkplus -lcilkrts -DUSE_CILK_PLUS_RUNTIME file.cpp -o file.out```
 
 ## Compiling via CMake
 
