@@ -12,13 +12,13 @@ Parallel-Batched Interpolation Search Tree
 
 ## Installing PCTL
 * Run from home directory (`/home/ubuntu`)
-* wget https://raw.githubusercontent.com/deepsea-inria/pctl/master/script/get.sh
-* chmod +x ./get.sh
-* ./get.sh $(pwd)/PBIST
+* `wget https://raw.githubusercontent.com/deepsea-inria/pctl/master/script/get.sh`
+* `chmod +x ./get.sh`
+* `./get.sh $(pwd)/PBIST`
 
 ## Compiling
 * Run from project directory (`/home/ubuntu/PBIST`)
-* g++ -std=c++17 `pctl/script/print-include-directives.sh $(pwd)` -fcilkplus -lcilkrts -DUSE_CILK_PLUS_RUNTIME file.cpp -o file.out
+* `g++ -std=c++17 `pctl/script/print-include-directives.sh $(pwd)` -fcilkplus -lcilkrts -DUSE_CILK_PLUS_RUNTIME file.cpp -o file.out`
 
 ## Installing OpenCilk
 
