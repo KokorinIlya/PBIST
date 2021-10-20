@@ -5,7 +5,7 @@
 #include <memory>
 #include <utility>
 #include <cassert>
-#include "datapar.h"
+#include "datapar.hpp"
 
 template <typename T>
 struct ist_internal_node

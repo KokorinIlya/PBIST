@@ -5,7 +5,7 @@ bin/
 chunkedseq/
 cmake_install.cmake
 cmdline/
-./include/
+/include/
 lib/
 libexec/
 pctl/
