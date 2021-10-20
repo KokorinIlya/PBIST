@@ -4,6 +4,10 @@
 #include "datapar.hpp"
 #include <cstdint>
 
-int32_t calc_sum_parallel(pasl::pctl::parray<int32_t> const& arr);
+template <typename T>
+T calc_sum_parallel(pasl::pctl::parray<T> const& arr) 
+{
+	return pasl::pctl::sum(arr.begin(), arr.end());
+}
 
 #endif
