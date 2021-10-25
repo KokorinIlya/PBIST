@@ -43,14 +43,16 @@ private:
         >
     >;
 
-    void do_dump_keys(keys_holder& holder, uint32_t level)
+    void do_dump_keys(keys_holder& holder, uint32_t level) const
     {
         if (holder.size() < level + 1)
         {
             assert(holder.size() == level);
-            holder.emplace_back({});
+            std::vector<std::vector<std::pair<T, bool>>> empty;
+            holder.push_back(empty);
         }
-        holder[level].emplace_back({});
+        std::vector<std::pair<T, bool>> empty;
+        holder[level].push_back(empty);
         for (int64_t i = 0; i < keys.size(); ++i)
         {
             auto [cur_key, key_exists] = keys[i];

@@ -21,7 +21,6 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
 {
     pasl::pctl::raw raw_marker;
 
-    //std::cout << "left = " << left << ", right = " << right << std::endl;
     assert(right >= left);
     if (left == right)
     {
@@ -32,7 +31,6 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
 
     if (keys_count <= size_threshold)
     {
-        //std::cout << "Leaf node" << std::endl;
         pasl::pctl::parray<std::pair<T, bool>> reps(
             keys_count,
             [left, &keys](long rep_idx) 
@@ -52,11 +50,8 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
         return std::make_unique<ist_internal_node<T>>(std::move(reps), std::move(children));
     }
 
-    //std::cout << "Inner node" << std::endl;
     uint64_t block_size = static_cast<uint64_t>(std::sqrt(keys_count));
     uint64_t rep_size = keys_count / (block_size + 1);
-    //std::cout << "block size = " << block_size << ", rep_size = " << rep_size <<
-    //    ", keys count = " << keys_count << std::endl;
 
     // TODO: use raw allocated memory
     pasl::pctl::parray<std::pair<T, bool>> reps(rep_size);
@@ -88,7 +83,6 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
                     start_idx = left + (child_idx - 1) * (block_size + 1) + block_size;
                     end_idx = left + child_idx * (block_size + 1) + block_size;
                 }
-                //std::cout << "not last, start_idx = " << start_idx << ", end_idx = " << end_idx << std::endl;
 
                 T const& cur_rep = keys[end_idx];
                 reps[child_idx] = {cur_rep, true};
@@ -100,7 +94,6 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
                 assert(child_idx == rep_size);
                 uint64_t start_idx = left + (child_idx - 1) * (block_size + 1) + block_size;
                 uint64_t end_idx = right;
-                //std::cout << "last, start_idx = " << start_idx << ", end_idx = " << end_idx << std::endl;
                 children[child_idx] = do_build_from_keys(keys, start_idx, end_idx, size_threshold);
             }
         }
