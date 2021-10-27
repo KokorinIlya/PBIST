@@ -37,27 +37,29 @@ private:
         );
     }
 
-    using keys_holder = std::vector<
-        std::vector<
-            std::vector<std::pair<T, bool>>
-        >
-    >;
+    using node_holder = std::vector<std::pair<T, bool>>;
+
+    using level_holder = std::vector<std::pair<node_holder, bool>>;
+
+    using keys_holder = std::vector<level_holder>;
 
     void do_dump_keys(keys_holder& holder, uint32_t level) const
     {
         if (holder.size() < level + 1)
         {
             assert(holder.size() == level);
-            std::vector<std::vector<std::pair<T, bool>>> empty;
+            level_holder empty;
             holder.push_back(empty);
         }
-        std::vector<std::pair<T, bool>> empty;
-        holder[level].push_back(empty);
+
+        node_holder cur_node_holder;
         for (int64_t i = 0; i < keys.size(); ++i)
         {
             auto [cur_key, key_exists] = keys[i];
-            holder[level].back().push_back({cur_key, key_exists});
+            cur_node_holder.push_back({cur_key, key_exists});
         }
+        holder[level].push_back({cur_node_holder, is_terminal()});
+
         for (uint64_t i = 0; i < children.size(); ++i)
         {
             children[i]->do_dump_keys(holder, level + 1);
@@ -78,9 +80,9 @@ public:
         assert(all_keys_exist() && "Non-existing key passed to the constructor");
     }
 
-    bool is_terminating() const
+    bool is_terminal() const
     {
-        return children.is_empty();
+        return children.size() == 0;
     }
 
     // O(n) Span, use for testing only

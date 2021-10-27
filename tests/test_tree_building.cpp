@@ -40,11 +40,11 @@ TEST(tree_building, simple)
         {
             std::cout << "node#" << j << std::endl;
             std::cout << "[ ";
-            for (auto k : stored_keys[i][j])
+            for (auto k : stored_keys[i][j].first)
             {
                 std::cout << k.first << ": " << k.second << "; ";
             }
-            std::cout << "]" << std::endl;
+            std::cout << "], terminal = " << stored_keys[i][j].second << std::endl;
         }
     }
 }

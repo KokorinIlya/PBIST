@@ -70,23 +70,12 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
         {
             if (child_idx < rep_size)
             {
-                uint64_t start_idx;
-                uint64_t end_idx;
-
-                if (child_idx == 0)
-                {
-                    start_idx = left;
-                    end_idx = left + block_size;
-                }
-                else
-                {
-                    start_idx = left + (child_idx - 1) * (block_size + 1) + block_size;
-                    end_idx = left + child_idx * (block_size + 1) + block_size;
-                }
+                uint64_t start_idx = left + child_idx * (block_size + 1);;
+                uint64_t end_idx = start_idx + block_size;
 
                 T const& cur_rep = keys[end_idx];
                 reps[child_idx] = {cur_rep, true};
-                children[child_idx] = do_build_from_keys(keys, start_idx, end_idx, size_threshold);;
+                children[child_idx] = do_build_from_keys(keys, start_idx, end_idx, size_threshold);
 
             }
             else
