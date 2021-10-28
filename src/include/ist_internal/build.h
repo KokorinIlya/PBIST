@@ -53,15 +53,8 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
     uint64_t block_size = static_cast<uint64_t>(std::sqrt(keys_count));
     uint64_t rep_size = keys_count / (block_size + 1);
 
-    // TODO: use raw allocated memory
-    pasl::pctl::parray<std::pair<T, bool>> reps(rep_size);
-    pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> children(
-        raw_marker, rep_size + 1,
-        [](long)
-        {
-            return nullptr;
-        }
-    );
+    pasl::pctl::parray<std::pair<T, bool>> reps(raw_marker, rep_size);
+    pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> children(raw_marker, rep_size + 1);
 
     // TODO: loop body is not constant, use Comp-based pfor
     pasl::pctl::parallel_for<uint64_t, std::function<void(long)>>(
@@ -74,16 +67,19 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
                 uint64_t end_idx = start_idx + block_size;
 
                 T const& cur_rep = keys[end_idx];
-                reps[child_idx] = {cur_rep, true};
-                children[child_idx] = do_build_from_keys(keys, start_idx, end_idx, size_threshold);
-
+                new (&reps[child_idx]) std::pair<T, bool>(cur_rep, true);
+                new (&children[child_idx]) std::unique_ptr<ist_internal_node<T>>(
+                    do_build_from_keys(keys, start_idx, end_idx, size_threshold)
+                );
             }
             else
             {
                 assert(child_idx == rep_size);
                 uint64_t start_idx = left + child_idx * (block_size + 1);
                 uint64_t end_idx = right;
-                children[child_idx] = do_build_from_keys(keys, start_idx, end_idx, size_threshold);
+                new (&children[child_idx]) std::unique_ptr<ist_internal_node<T>>(
+                    do_build_from_keys(keys, start_idx, end_idx, size_threshold)
+                );
             }
         }
     );

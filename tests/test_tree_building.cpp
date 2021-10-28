@@ -32,11 +32,13 @@ TEST(tree_building, simple)
         }
     );
     std::unique_ptr<ist_internal_node<int32_t>> result = build_from_keys(keys, 3);
-    auto stored_keys = result->dump_keys();
-    for (uint32_t i = 0; i < stored_keys.size(); ++i)
+
+    std::cout << "Keys by level:" << std::endl;
+    auto stored_keys = result->dump_keys_by_level_seq();
+    for (uint64_t i = 0; i < stored_keys.size(); ++i)
     {
         std::cout << "level#" << i << std::endl;
-        for (uint32_t j = 0; j < stored_keys[i].size(); ++j)
+        for (uint64_t j = 0; j < stored_keys[i].size(); ++j)
         {
             std::cout << "node#" << j << std::endl;
             std::cout << "[ ";
@@ -47,4 +49,13 @@ TEST(tree_building, simple)
             std::cout << "], terminal = " << stored_keys[i][j].second << std::endl;
         }
     }
+
+    std::cout << "Flattened keys:" << std::endl;
+    auto flattened_keys = result->dump_keys_seq();
+    std::cout << "[";
+    for (uint64_t i = 0; i < flattened_keys.size(); ++i)
+    {
+        std::cout << flattened_keys[i] << ", ";
+    }
+    std::cout << "]" << std::endl;
 }
