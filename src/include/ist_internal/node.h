@@ -153,18 +153,69 @@ private:
             {
                 return x + y;
             },
-            pasl::pctl::scan_type::forward_inclusive_scan
+            pasl::pctl::scan_type::forward_exclusive_scan
         );
     }
 
-    void do_get_keys(
-        pasl::pctl::parray<T>& keys, pasl::pctl::parray<uint64_t> const& borders,
-        uint64_t left, uint64_t right) const
+    static void fill_reps(
+        pasl::pctl::parray<std::pair<T, bool>> const& this_keys,
+        pasl::pctl::parray<T>& keys,
+        pasl::pctl::parray<uint64_t> const& borders,
+        uint64_t left)
     {
+        
+    }
+
+    void do_get_keys(pasl::pctl::parray<T>& keys_holder, uint64_t left, uint64_t right) const
+    {
+        pasl::pctl::parray<uint64_t> const& borders = get_borders();
         assert(left + borders[borders.size() - 1] == right);
-        assert(0 <= left && left < right && right <= keys.size());
-        assert(borders.size() == keys.size() + children.size());
-        // TODO
+        assert(0 <= left && left < right && right <= keys_holder.size());
+        assert(borders.size() == keys_holder.size() + children.size());
+
+        pasl::pctl::parray<std::pair<T, bool>> const& this_keys = this->keys;
+        pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> const& this_children = this->children;
+
+        fork2(
+            [&this_keys, &keys_holder, &borders, left]()
+            {
+                pasl::pctl::parallel_for(
+                    0, this_keys.size(),
+                    [&this_keys, &keys_holder, &borders, left](uint64_t key_idx)
+                    {
+                        auto [cur_key, exists] = this_keys[key_idx];
+                        if (exists)
+                        {
+                            uint64_t border_idx = 2 * key_idx + 1;
+                            uint64_t key_pos = left + borders[border_idx];
+                            keys_holder[key_pos] = cur_key;
+                        }
+                        // TODO: add assertions on borders & exists
+                    }
+                );
+            },
+            
+            [&this_children, &keys_holder, &borders, left, right]()
+            {
+                pasl::pctl::parallel_for(
+                    0, this_children.size(),
+                    [&this_children, &keys_holder, &borders, left, right](uint64_t child_idx)
+                    {
+                        uint64_t border_idx = 2 * child_idx;
+                
+                        uint64_t cur_left = borders[child_idx];
+                        uint64_t cur_right = right;
+                        assert(border_idx < borders.size());
+                        if (border_idx < borders.size() - 1)
+                        {
+                            cur_right = borders[border_idx + 1];
+                        }
+
+                        this_children[child_idx]->do_get_keys(keys_holder, left, right);
+                    }
+                );
+            }
+        );
     }
 
 public:
@@ -211,8 +262,8 @@ public:
             return pasl::pctl::parray<T>(0);
         }
         pasl::pctl::parray<uint64_t> borders = get_borders();
-        pasl::pctl::parray<T> keys(pasl::pctl::raw{}, borders[borders.size() - 1]);
-        do_get_keys(keys, borders, 0, keys.size());
+        pasl::pctl::parray<T> keys(pasl::pctl::raw{}, cur_size);
+        do_get_keys(keys, borders, 0, cur_size);
         return keys;
     }
 };
