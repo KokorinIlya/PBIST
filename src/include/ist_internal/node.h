@@ -230,7 +230,10 @@ public:
     {
         children = std::move(_children);
         assert(keys.size() > 0 && "Empty key array passed to the constructor");
-        assert(children.size() == 0 || children.size() == keys.size() + 1 && "Keys and children count doesn't match");
+        assert(
+            children.size() == 0 || 
+            children.size() == keys.size() + 1 && "Keys and children count doesn't match"
+        );
         assert(all_keys_exist() && "Non-existing key passed to the constructor");
     }
 
