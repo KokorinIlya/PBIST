@@ -157,19 +157,11 @@ private:
         );
     }
 
-    static void fill_reps(
-        pasl::pctl::parray<std::pair<T, bool>> const& this_keys,
-        pasl::pctl::parray<T>& keys,
-        pasl::pctl::parray<uint64_t> const& borders,
-        uint64_t left)
-    {
-        
-    }
-
     void do_get_keys(pasl::pctl::parray<T>& keys_holder, uint64_t left, uint64_t right) const
     {
         pasl::pctl::parray<uint64_t> const& borders = get_borders();
-        assert(left + borders[borders.size() - 1] == right);
+
+        assert(borders.size() > 0);
         assert(0 <= left && left < right && right <= keys_holder.size());
         assert(borders.size() == keys_holder.size() + children.size());
 
@@ -187,6 +179,7 @@ private:
                         if (exists)
                         {
                             uint64_t border_idx = 2 * key_idx + 1;
+                            assert(border_idx < borders.size());
                             uint64_t key_pos = left + borders[border_idx];
                             keys_holder[key_pos] = cur_key;
                         }
@@ -203,7 +196,7 @@ private:
                     {
                         uint64_t border_idx = 2 * child_idx;
                 
-                        uint64_t cur_left = borders[child_idx];
+                        uint64_t cur_left = left + borders[border_idx];
                         uint64_t cur_right = right;
                         assert(border_idx < borders.size());
                         if (border_idx < borders.size() - 1)
@@ -211,7 +204,7 @@ private:
                             cur_right = borders[border_idx + 1];
                         }
 
-                        this_children[child_idx]->do_get_keys(keys_holder, left, right);
+                        this_children[child_idx]->do_get_keys(keys_holder, cur_left, cur_right);
                     }
                 );
             }
@@ -264,9 +257,8 @@ public:
         {
             return pasl::pctl::parray<T>(0);
         }
-        pasl::pctl::parray<uint64_t> borders = get_borders();
         pasl::pctl::parray<T> keys(pasl::pctl::raw{}, cur_size);
-        do_get_keys(keys, borders, 0, cur_size);
+        do_get_keys(keys, 0, cur_size);
         return keys;
     }
 };
