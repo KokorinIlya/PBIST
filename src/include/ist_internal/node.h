@@ -129,15 +129,15 @@ private:
                     uint64_t i = static_cast<uint64_t>(idx) / static_cast<uint64_t>(2);
                     if (idx % 2 == 0)
                     {
-                        return this_children[i].cur_size;
+                        return this_children[i]->cur_size;
                     }
                     else if (this_keys[i].second)
                     {
-                        return 1;
+                        return static_cast<uint64_t>(1);
                     }
                     else
                     {
-                        return 0;
+                        return static_cast<uint64_t>(0);
                     }
                 }
             );
@@ -147,7 +147,11 @@ private:
     pasl::pctl::parray<uint64_t> get_borders() const
     {
         pasl::pctl::parray<uint64_t> sizes = get_sizes();
-        return pasl::pctl::scan(
+        return pasl::pctl::scan<
+            pasl::pctl::parray<uint64_t>::iterator,
+            uint64_t,
+            std::function<uint64_t(uint64_t, uint64_t)>
+        >(
             sizes.begin(), sizes.end(), 0,
             [](uint64_t x, uint64_t y)
             {
@@ -168,10 +172,10 @@ private:
         pasl::pctl::parray<std::pair<T, bool>> const& this_keys = this->keys;
         pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> const& this_children = this->children;
 
-        fork2(
+        pasl::pctl::granularity::fork2(
             [&this_keys, &keys_holder, &borders, left]()
             {
-                pasl::pctl::parallel_for(
+                pasl::pctl::parallel_for<uint64_t, std::function<void(uint64_t)>>(
                     0, this_keys.size(),
                     [&this_keys, &keys_holder, &borders, left](uint64_t key_idx)
                     {
@@ -190,7 +194,7 @@ private:
             
             [&this_children, &keys_holder, &borders, left, right]()
             {
-                pasl::pctl::parallel_for(
+                pasl::pctl::parallel_for<uint64_t, std::function<void(uint64_t)>>(
                     0, this_children.size(),
                     [&this_children, &keys_holder, &borders, left, right](uint64_t child_idx)
                     {

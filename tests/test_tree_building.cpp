@@ -50,12 +50,21 @@ TEST(tree_building, simple)
         }
     }
 
-    std::cout << "Flattened keys:" << std::endl;
-    auto flattened_keys = result->dump_keys_seq();
+    std::cout << "Seq flattened keys:" << std::endl;
+    auto seq_flattened_keys = result->dump_keys_seq();
     std::cout << "[";
-    for (uint64_t i = 0; i < flattened_keys.size(); ++i)
+    for (uint64_t i = 0; i < seq_flattened_keys.size(); ++i)
     {
-        std::cout << flattened_keys[i] << ", ";
+        std::cout << seq_flattened_keys[i] << ", ";
+    }
+    std::cout << "]" << std::endl;
+
+    std::cout << "Par flattened keys:" << std::endl;
+    auto par_flattened_keys = result->get_keys();
+    std::cout << "[";
+    for (uint64_t i = 0; i < par_flattened_keys.size(); ++i)
+    {
+        std::cout << par_flattened_keys[i] << ", ";
     }
     std::cout << "]" << std::endl;
 }
