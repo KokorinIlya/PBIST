@@ -47,7 +47,7 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
             }
         );
 
-        return std::make_unique<ist_internal_node<T>>(std::move(reps), std::move(children));
+        return std::make_unique<ist_internal_node<T>>(std::move(reps), std::move(children), keys_count);
     }
 
     uint64_t block_size = static_cast<uint64_t>(std::sqrt(keys_count));
@@ -83,7 +83,7 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
             }
         }
     );
-    return std::make_unique<ist_internal_node<T>>(std::move(reps), std::move(children));
+    return std::make_unique<ist_internal_node<T>>(std::move(reps), std::move(children), keys_count);
 }
 
 template <typename T>

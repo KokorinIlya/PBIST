@@ -8,6 +8,7 @@
 #include "datapar.hpp"
 #include <vector>
 #include <functional>
+#include "utils.h"
 
 template <typename T>
 struct ist_internal_node
@@ -97,7 +98,6 @@ private:
 
     pasl::pctl::parray<uint64_t> get_sizes() const
     {
-
         pasl::pctl::parray<std::pair<T, bool>> const& this_keys = this->keys;
         pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> const& this_children = this->children;
 
@@ -161,28 +161,41 @@ private:
         );
     }
 
+    static uint64_t get_border_idx_by_key_idx(uint64_t key_idx, bool terminal)
+    {
+        if (terminal)
+        {
+            return key_idx;
+        }
+        else
+        {
+            return 2 * key_idx + 1;
+        }
+    }
+
     void do_get_keys(pasl::pctl::parray<T>& keys_holder, uint64_t left, uint64_t right) const
     {
         pasl::pctl::parray<uint64_t> const& borders = get_borders();
 
         assert(borders.size() > 0);
         assert(0 <= left && left < right && right <= keys_holder.size());
-        assert(borders.size() == keys_holder.size() + children.size());
+        assert(borders.size() == keys.size() + children.size());
 
         pasl::pctl::parray<std::pair<T, bool>> const& this_keys = this->keys;
         pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> const& this_children = this->children;
+        bool terminal = this->is_terminal();
 
         pasl::pctl::granularity::fork2(
-            [&this_keys, &keys_holder, &borders, left]()
+            [&this_keys, &keys_holder, &borders, left, terminal]()
             {
                 pasl::pctl::parallel_for<uint64_t, std::function<void(uint64_t)>>(
                     0, this_keys.size(),
-                    [&this_keys, &keys_holder, &borders, left](uint64_t key_idx)
+                    [&this_keys, &keys_holder, &borders, left, terminal](uint64_t key_idx)
                     {
                         auto [cur_key, exists] = this_keys[key_idx];
                         if (exists)
                         {
-                            uint64_t border_idx = 2 * key_idx + 1;
+                            uint64_t border_idx = ist_internal_node<T>::get_border_idx_by_key_idx(key_idx, terminal);
                             assert(border_idx < borders.size());
                             uint64_t key_pos = left + borders[border_idx];
                             keys_holder[key_pos] = cur_key;
@@ -218,12 +231,13 @@ private:
 public:
     ist_internal_node(
         pasl::pctl::parray<std::pair<T, bool>>&& _keys,
-        pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>>&& _children
+        pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>>&& _children,
+        uint64_t keys_count
     ) : keys(std::move(_keys)), 
         //children(std::move(_children)),
         children(pasl::pctl::raw{}, 0),
-        initial_size(keys.size()),
-        cur_size(keys.size())
+        initial_size(keys_count),
+        cur_size(keys_count)
     {
         children = std::move(_children);
         assert(keys.size() > 0 && "Empty key array passed to the constructor");
