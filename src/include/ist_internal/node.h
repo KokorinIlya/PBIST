@@ -24,12 +24,11 @@ private:
 
     bool all_keys_exist()
     {
-        pasl::pctl::parray<std::pair<T, bool>> const& this_keys = this->keys;
         pasl::pctl::parray< bool> exists(
-            this_keys.size(), 
-            [&this_keys] (long i)
+            this->keys.size(), 
+            [this] (long i)
             {
-                return this_keys[i].second;
+                return this->keys[i].second;
             }
         );
         return pasl::pctl::reduce(
@@ -98,17 +97,15 @@ private:
 
     pasl::pctl::parray<uint64_t> get_sizes() const
     {
-        pasl::pctl::parray<std::pair<T, bool>> const& this_keys = this->keys;
-        pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> const& this_children = this->children;
 
         if (is_terminal())
         {
             assert(children.size() == 0);
             return pasl::pctl::parray<uint64_t>(
                 keys.size(),
-                [&this_keys](long idx)
+                [this](long idx)
                 {
-                    if (this_keys[idx].second)
+                    if (this->keys[idx].second)
                     {
                         return 1;
                     }
@@ -124,14 +121,14 @@ private:
             assert(keys.size() + 1 == children.size());
             return pasl::pctl::parray<uint64_t>(
                 pasl::pctl::raw{}, keys.size() + children.size(),
-                [&this_keys, &this_children](long idx)
+                [this](long idx)
                 {
                     uint64_t i = static_cast<uint64_t>(idx) / static_cast<uint64_t>(2);
                     if (idx % 2 == 0)
                     {
-                        return this_children[i]->cur_size;
+                        return this->children[i]->cur_size;
                     }
-                    else if (this_keys[i].second)
+                    else if (this->keys[i].second)
                     {
                         return static_cast<uint64_t>(1);
                     }
@@ -161,9 +158,9 @@ private:
         );
     }
 
-    static uint64_t get_border_idx_by_key_idx(uint64_t key_idx, bool terminal)
+    uint64_t get_border_idx_by_key_idx(uint64_t key_idx) const
     {
-        if (terminal)
+        if (is_terminal())
         {
             return key_idx;
         }
@@ -181,21 +178,17 @@ private:
         assert(0 <= left && left < right && right <= keys_holder.size());
         assert(borders.size() == keys.size() + children.size());
 
-        pasl::pctl::parray<std::pair<T, bool>> const& this_keys = this->keys;
-        pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> const& this_children = this->children;
-        bool terminal = this->is_terminal();
-
         pasl::pctl::granularity::fork2(
-            [&this_keys, &keys_holder, &borders, left, terminal]()
+            [this, &keys_holder, &borders, left]()
             {
                 pasl::pctl::parallel_for<uint64_t, std::function<void(uint64_t)>>(
-                    0, this_keys.size(),
-                    [&this_keys, &keys_holder, &borders, left, terminal](uint64_t key_idx)
+                    0, this->keys.size(),
+                    [this, &keys_holder, &borders, left](uint64_t key_idx)
                     {
-                        auto [cur_key, exists] = this_keys[key_idx];
+                        auto [cur_key, exists] = this->keys[key_idx];
                         if (exists)
                         {
-                            uint64_t border_idx = ist_internal_node<T>::get_border_idx_by_key_idx(key_idx, terminal);
+                            uint64_t border_idx = this->get_border_idx_by_key_idx(key_idx);
                             assert(border_idx < borders.size());
                             uint64_t key_pos = left + borders[border_idx];
                             keys_holder[key_pos] = cur_key;
@@ -205,11 +198,11 @@ private:
                 );
             },
             
-            [&this_children, &keys_holder, &borders, left, right]()
+            [this, &keys_holder, &borders, left, right]()
             {
                 pasl::pctl::parallel_for<uint64_t, std::function<void(uint64_t)>>(
-                    0, this_children.size(),
-                    [&this_children, &keys_holder, &borders, left, right](uint64_t child_idx)
+                    0, this->children.size(),
+                    [this, &keys_holder, &borders, left, right](uint64_t child_idx)
                     {
                         uint64_t border_idx = 2 * child_idx;
                 
@@ -221,7 +214,7 @@ private:
                             cur_right = borders[border_idx + 1];
                         }
 
-                        this_children[child_idx]->do_get_keys(keys_holder, cur_left, cur_right);
+                        this->children[child_idx]->do_get_keys(keys_holder, cur_left, cur_right);
                     }
                 );
             }
