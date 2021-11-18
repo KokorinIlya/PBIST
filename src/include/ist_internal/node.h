@@ -83,21 +83,30 @@ private:
             }
             return;
         }
-        for (uint64_t i = 0; i < keys.size(); ++i)
+        else
         {
-            children[i]->do_dump_keys_seq(res);
-            auto [cur_key, exists] = keys[i];
-            if (exists)
+            assert(children.size() == keys.size() + 1);
+            for (uint64_t i = 0; i < keys.size(); ++i)
             {
-                res.push_back(cur_key);
+                assert(children[i].get() != nullptr);
+                children[i]->do_dump_keys_seq(res);
+                auto [cur_key, exists] = keys[i];
+                if (exists)
+                {
+                    res.push_back(cur_key);
+                }
+            }
+            if (children[children.size() - 1].get() != nullptr)
+            {
+                children[children.size() - 1]->do_dump_keys_seq(res);
             }
         }
-        children[children.size() - 1]->do_dump_keys_seq(res);
     }
 
+
+    // TODO: nullptr children
     pasl::pctl::parray<uint64_t> get_sizes() const
     {
-
         if (is_terminal())
         {
             assert(children.size() == 0);
@@ -214,6 +223,7 @@ private:
                             cur_right = borders[border_idx + 1];
                         }
 
+                        // TODO: can it be null?
                         this->children[child_idx]->do_get_keys(keys_holder, cur_left, cur_right);
                     }
                 );
