@@ -63,9 +63,28 @@ private:
         }
         holder[level].push_back({cur_node_holder, is_terminal()});
 
-        for (uint64_t i = 0; i < children.size(); ++i)
+        if (!is_terminal())
         {
-            children[i]->do_dump_keys_by_level_seq(holder, level + 1);
+            assert(keys.size() + 1 == children.size());
+            for (uint64_t i = 0; i < children.size() - 1; ++i)
+            {
+                assert(children[i].get() != nullptr);
+                children[i]->do_dump_keys_by_level_seq(holder, level + 1);
+            }
+            if (children[children.size() - 1].get() != nullptr)
+            {
+                children[children.size() - 1]->do_dump_keys_by_level_seq(holder, level + 1);
+            }
+            else
+            {
+                assert(holder.size() >= level + 2);
+                node_holder empty_node_holder;
+                holder[level + 1].push_back({empty_node_holder, true});
+            }
+        }
+        else
+        {
+            assert(children.size() == 0);
         }
     }
 
@@ -104,7 +123,6 @@ private:
     }
 
 
-    // TODO: nullptr children
     pasl::pctl::parray<uint64_t> get_sizes() const
     {
         if (is_terminal())
@@ -135,7 +153,15 @@ private:
                     uint64_t i = static_cast<uint64_t>(idx) / static_cast<uint64_t>(2);
                     if (idx % 2 == 0)
                     {
-                        return this->children[i]->cur_size;
+                        assert(i == this->children.size() - 1 || this->children[i].get() != nullptr);
+                        if (this->children[i].get() != nullptr)
+                        {
+                            return this->children[i]->cur_size;
+                        }
+                        else
+                        {
+                            return static_cast<uint64_t>(0);
+                        }
                     }
                     else if (this->keys[i].second)
                     {
@@ -223,8 +249,11 @@ private:
                             cur_right = borders[border_idx + 1];
                         }
 
-                        // TODO: can it be null?
-                        this->children[child_idx]->do_get_keys(keys_holder, cur_left, cur_right);
+                        assert(child_idx == this->children.size() - 1 || this->children[child_idx].get() != nullptr);
+                        if (this->children[child_idx].get() != nullptr)
+                        {
+                            this->children[child_idx]->do_get_keys(keys_holder, cur_left, cur_right);
+                        }
                     }
                 );
             }

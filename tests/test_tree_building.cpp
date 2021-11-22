@@ -62,10 +62,63 @@ TEST(tree_building, simple)
     }
 }
 
-TEST(tree_building, failed)
+TEST(tree_building, last_child_empty)
 {
     pasl::pctl::parray<int32_t> keys = {0, 1, 2, 3, 4, 5};
     std::unique_ptr<ist_internal_node<int32_t>> result = build_from_keys(keys, 3);
+
+    auto stored_keys = result->dump_keys_by_level_seq();
+
+    ASSERT_EQ(stored_keys.size(), 2);
+
+    ASSERT_EQ(stored_keys[0].size(), 1);
+
+    ASSERT_FALSE(stored_keys[0][0].second);
+    std::vector<std::pair<int32_t, bool>> exp_top = {{2, true}, {5, true}};
+    ASSERT_EQ(stored_keys[0][0].first, exp_top);
+
+    ASSERT_EQ(stored_keys[1].size(), 3);
+
+    ASSERT_TRUE(stored_keys[1][0].second);
+    std::vector<std::pair<int32_t, bool>> exp_1 = {{0, true}, {1, true}};
+    ASSERT_EQ(stored_keys[1][0].first, exp_1);
+
+    ASSERT_TRUE(stored_keys[1][1].second);
+    std::vector<std::pair<int32_t, bool>> exp_2 = {{3, true}, {4, true}};
+    ASSERT_EQ(stored_keys[1][1].first, exp_2);
+
+    ASSERT_TRUE(stored_keys[1][2].second);
+    std::vector<std::pair<int32_t, bool>> exp_3;
+    ASSERT_EQ(stored_keys[1][2].first, exp_3);
+
+    auto flattened_keys = result->dump_keys_seq();
+    ASSERT_EQ(keys.size(), flattened_keys.size());
+    for (uint32_t i = 0; i < keys.size(); ++i)
+    {
+        ASSERT_EQ(keys[i], flattened_keys[i]);
+    }
+}
+
+TEST(tree_building, empty)
+{
+    pasl::pctl::parray<int32_t> keys;
+    std::unique_ptr<ist_internal_node<int32_t>> result = build_from_keys(keys, 3);
+    ASSERT_EQ(nullptr, result.get());
+}
+
+TEST(tree_building, signle_level)
+{
+    pasl::pctl::parray<int32_t> keys = {0, 1, 2, 3, 4, 5};
+    std::unique_ptr<ist_internal_node<int32_t>> result = build_from_keys(keys, 10);
+
+    auto stored_keys = result->dump_keys_by_level_seq();
+
+    ASSERT_EQ(stored_keys.size(), 1);
+    ASSERT_EQ(stored_keys[0].size(), 1);
+    ASSERT_TRUE(stored_keys[0][0].second);
+    std::vector<std::pair<int32_t, bool>> exp_top = {{0, true}, {1, true}, {2, true}, {3, true}, {4, true}, {5, true}};
+    ASSERT_EQ(stored_keys[0][0].first, exp_top);
+
     auto flattened_keys = result->dump_keys_seq();
     ASSERT_EQ(keys.size(), flattened_keys.size());
     for (uint32_t i = 0; i < keys.size(); ++i)
