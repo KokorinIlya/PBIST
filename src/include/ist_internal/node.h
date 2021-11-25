@@ -214,21 +214,32 @@ private:
         assert(borders.size() == keys.size() + children.size());
 
         pasl::pctl::granularity::fork2(
-            [this, &keys_holder, &borders, left]()
+            [this, &keys_holder, &borders, left, right]()
             {
                 pasl::pctl::parallel_for<uint64_t, std::function<void(uint64_t)>>(
                     0, this->keys.size(),
-                    [this, &keys_holder, &borders, left](uint64_t key_idx)
+                    [this, &keys_holder, &borders, left, right](uint64_t key_idx)
                     {
                         auto [cur_key, exists] = this->keys[key_idx];
+                        uint64_t border_idx = this->get_border_idx_by_key_idx(key_idx);
+                        assert(border_idx < borders.size());
+                        uint64_t key_pos = left + borders[border_idx];
+
+                        uint64_t next_key_pos = right;
+                        if (border_idx + 1 < borders.size())
+                        {
+                            next_key_pos = left + borders[border_idx + 1];
+                        }
+
                         if (exists)
                         {
-                            uint64_t border_idx = this->get_border_idx_by_key_idx(key_idx);
-                            assert(border_idx < borders.size());
-                            uint64_t key_pos = left + borders[border_idx];
+                            assert(next_key_pos == key_pos + 1);
                             keys_holder[key_pos] = cur_key;
                         }
-                        // TODO: add assertions on borders & exists
+                        else
+                        {
+                            assert(next_key_pos == key_pos + 1);
+                        }
                     }
                 );
             },
@@ -246,7 +257,7 @@ private:
                         assert(border_idx < borders.size());
                         if (border_idx < borders.size() - 1)
                         {
-                            cur_right = borders[border_idx + 1];
+                            cur_right = left + borders[border_idx + 1];
                         }
 
                         assert(child_idx == this->children.size() - 1 || this->children[child_idx].get() != nullptr);

@@ -1,3 +1,7 @@
+#ifndef TEST_TREE_BUILDING
+#define TEST_TREE_BUILDING
+
+
 #include <gtest/gtest.h>
 #include "ist_internal/node.h"
 #include "ist_internal/build.h"
@@ -11,8 +15,6 @@
 #include <iostream>
 #include <random>
 #include <algorithm>
-#include <iostream>
-#include <utils.h>
 
 TEST(tree_building, simple)
 {
@@ -52,14 +54,6 @@ TEST(tree_building, simple)
     auto seq_flattened_keys = result->dump_keys_seq();
     std::vector<int32_t> exp_flattened_keys = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     ASSERT_EQ(exp_flattened_keys, seq_flattened_keys);
-
-    auto par_flattened_keys = result->get_keys();
-    pasl::pctl::parray<int32_t> exp_par_flattened_keys = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    ASSERT_EQ(exp_par_flattened_keys.size(), par_flattened_keys.size());
-    for (uint64_t i = 0; i < par_flattened_keys.size(); ++i)
-    {
-        ASSERT_EQ(exp_par_flattened_keys[i], par_flattened_keys[i]);
-    }
 }
 
 TEST(tree_building, last_child_empty)
@@ -161,3 +155,5 @@ TEST(tree_building, stress)
         ASSERT_EQ(keys_v, flattened_keys);
     }
 }
+
+#endif
