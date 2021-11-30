@@ -1,5 +1,4 @@
-#ifndef BINARY_SEARCH_H
-#define BINARY_SEARCH_H
+#pragma once
 
 #include <cstdint>
 #include "parray.hpp"
@@ -44,7 +43,7 @@ std::pair<uint64_t, bool> binary_search(pasl::pctl::parray<std::pair<T, bool>> k
         return {0, false};
     }
 
-    else if (search_key > keys[keys.size() - 1].first)
+    if (search_key > keys[keys.size() - 1].first)
     {
         return {keys.size(), false};
     }
@@ -67,14 +66,14 @@ std::pair<uint64_t, bool> binary_search(pasl::pctl::parray<std::pair<T, bool>> k
         }
     }
 
+    assert(search_key > keys[cur_left].first);
+    assert(search_key <= keys[cur_right].first);
     if (search_key == keys[cur_right].first)
     {
         return {cur_right, true};
     }
     else
     {
-        return {cur_right + 1, false};
+        return {cur_right, false};
     }
 }
-
-#endif

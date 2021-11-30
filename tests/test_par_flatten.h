@@ -1,5 +1,4 @@
-#ifndef TEST_PAR_FLATTEN
-#define TEST_PAR_FLATTEN
+#pragma once
 
 #include <gtest/gtest.h>
 #include "ist_internal/node.h"
@@ -71,5 +70,3 @@ TEST(parallel_flatten, stress)
         }
     }
 }
-
-#endif

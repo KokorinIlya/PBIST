@@ -1,5 +1,4 @@
-#ifndef IST_INTERNAL_TREE_H
-#define IST_INTERNAL_TREE_H
+#pragma once
 
 #include "node.h"
 #include "build.h"
@@ -15,6 +14,3 @@ public:
 private:
     std::unique_ptr<ist_internal_node<T>> root;
 };
-
-
-#endif

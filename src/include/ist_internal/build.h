@@ -1,5 +1,4 @@
-#ifndef IST_INTERNAL_BUILDING_H
-#define IST_INTERNAL_BUILDING_H
+#pragma once
 
 #include "parray.hpp"
 #include "datapar.hpp"
@@ -91,4 +90,3 @@ std::unique_ptr<ist_internal_node<T>> build_from_keys(pasl::pctl::parray<T> cons
 {
     return do_build_from_keys(keys, 0, keys.size(), size_threshold);
 }
-#endif

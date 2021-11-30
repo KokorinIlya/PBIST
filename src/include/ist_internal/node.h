@@ -1,5 +1,4 @@
-#ifndef IST_INTERNAL_NODE_H
-#define IST_INTERNAL_NODE_H
+#pragma once
 
 #include "parray.hpp"
 #include <memory>
@@ -323,6 +322,3 @@ public:
         return keys;
     }
 };
-
-
-#endif

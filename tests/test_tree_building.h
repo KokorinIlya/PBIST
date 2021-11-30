@@ -1,5 +1,4 @@
-#ifndef TEST_TREE_BUILDING
-#define TEST_TREE_BUILDING
+#pragma once
 
 
 #include <gtest/gtest.h>
@@ -155,5 +154,3 @@ TEST(tree_building, stress)
         ASSERT_EQ(keys_v, flattened_keys);
     }
 }
-
-#endif
