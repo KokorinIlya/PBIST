@@ -238,7 +238,7 @@ private:
                         }
                         else
                         {
-                            assert(next_key_pos == key_pos + 1);
+                            assert(next_key_pos == key_pos);
                         }
                     }
                 );
