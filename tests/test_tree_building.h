@@ -7,13 +7,12 @@
 #include <memory>
 #include <cstdint>
 #include <stdio.h>
-#include <execinfo.h>
-#include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <iostream>
 #include <random>
 #include <algorithm>
+#include "config.h"
 
 TEST(tree_building, simple)
 {
@@ -123,14 +122,13 @@ TEST(tree_building, signle_level)
 TEST(tree_building, stress) 
 {
     uint32_t max_size = 100'000;
-    uint32_t tests_count = 200;
 
     std::default_random_engine generator(time(nullptr));
     std::uniform_int_distribution<uint32_t> size_distribution(1, max_size);
     std::uniform_int_distribution<uint32_t> size_threshold_distribution(3, 10);
     std::uniform_int_distribution<int32_t> elements_distribution(-1000000, 1000000);
 
-    for (uint32_t i = 0; i < tests_count; ++i)
+    for (uint32_t i = 0; i < TESTS_COUNT; ++i)
     {
         uint32_t cur_size = size_distribution(generator);
         uint32_t cur_size_threshold = size_threshold_distribution(generator);

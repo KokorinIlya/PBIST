@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ist_internal/search.h"
+#include "../config.h"
 #include "search.h"
 #include "parray.hpp"
 #include <utility>
@@ -67,14 +68,12 @@ TEST(binary_search, multiple_keys)
 TEST(binary_search, stress) 
 {
     uint32_t max_size = 100'000;
-    uint32_t tests_count = 100;
-    uint32_t requests_count = 100;
 
     std::default_random_engine generator(time(nullptr));
     std::uniform_int_distribution<uint32_t> size_distribution(1, max_size);
     std::uniform_int_distribution<int32_t> elements_distribution(-1000000, 1000000);
 
-    for (uint32_t i = 0; i < tests_count; ++i)
+    for (uint32_t i = 0; i < TESTS_COUNT; ++i)
     {
         uint32_t cur_size = size_distribution(generator);
 
@@ -103,7 +102,7 @@ TEST(binary_search, stress)
             }
         );
 
-        for (uint32_t j = 0; j < requests_count; ++j)
+        for (uint32_t j = 0; j < REQUESTS_PER_TEST; ++j)
         {
             int32_t cur_req =  elements_distribution(generator);
             auto [idx, found] = binary_search(keys, cur_req);

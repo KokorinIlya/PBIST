@@ -10,6 +10,9 @@
 #include "utils.h"
 
 template <typename T>
+struct ist_internal;
+
+template <typename T>
 struct ist_internal_node
 {
 private:
@@ -271,6 +274,8 @@ private:
     }
 
 public:
+    friend struct ist_internal<T>;
+
     ist_internal_node(
         pasl::pctl::parray<std::pair<T, bool>>&& _keys,
         pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>>&& _children,
