@@ -8,6 +8,7 @@
 #include <vector>
 #include <functional>
 #include "utils.h"
+#include "search.h"
 
 template <typename T>
 struct ist_internal;
@@ -325,5 +326,141 @@ public:
         pasl::pctl::parray<T> keys(pasl::pctl::raw{}, cur_size);
         do_get_keys(keys, 0, cur_size);
         return keys;
+    }
+
+    void do_contains(pasl::pctl::parray<T> const& arr, pasl::pctl::parray<bool>& result, 
+                     uint64_t left_border, uint64_t right_border) const
+    {
+        assert(arr.size() == result.size());
+        assert(0 <= left_border < right_border < arr.size());
+
+        if (is_terminal())
+        {
+            pasl::pctl::parallel_for(
+                left_border, right_border,
+                [this, &arr, &result, left_border, right_border](long key_idx)
+                {
+                    assert(left_border <= key_idx < right_border);
+                    auto [search_idx, found] = binary_search(this->keys, arr[key_idx]);
+                    if (found)
+                    {
+                        assert(this->keys[search_idx].first == arr[key_idx]);
+                        result[key_idx] = this->keys[search_idx].second;
+                    }
+                    else
+                    {
+                        result[key_idx] = false;
+                    }
+                }
+            );
+        }
+        else
+        {
+            uint64_t range_size = right_border - left_border;
+            pasl::pctl::raw raw_marker;
+            pasl::pctl::parray<int64_t> child_idx(raw_marker, range_size);
+
+            pasl::pctl::parallel_for(
+                left_border, right_border,
+                [this, &arr, &result, &child_idx, left_border, right_border](long key_idx)
+                {
+                    assert(left_border <= key_idx < right_border);
+                    auto [search_idx, found] = binary_search(this->keys, arr[key_idx]);
+                    if (found)
+                    {
+                        assert(this->keys[search_idx].first == arr[key_idx]);
+                        result[key_idx] = this->keys[search_idx].second;
+                        child_idx[key_idx - left_border] = -1;
+                    }
+                    else
+                    {
+                         child_idx[key_idx - left_border] = search_idx;
+                    }
+                }
+            );
+
+            pasl::pctl::parray<uint64_t> all_indexes(
+                raw_marker, child_idx.size(),
+                [](uint64_t idx)
+                {
+                    return idx;
+                }
+            );
+
+            pasl::pctl::parray<uint64_t> range_begins = pasl::pctl::filter(
+                all_indexes.begin(), all_indexes.end(),
+                [&child_idx](uint64_t cur_idx)
+                {
+                    assert(0 <= cur_idx && cur_idx <= child_idx.size());
+                    if (cur_idx == 0)
+                    {
+                        return child_idx[0] != -1;
+                    }
+                    else if (0 < cur_idx && cur_idx < child_idx.size())
+                    {
+                        return child_idx[cur_idx] != -1 && child_idx[cur_idx] != child_idx[cur_idx - 1];
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            );
+
+            pasl::pctl::parray<uint64_t> range_ends = pasl::pctl::filter(
+                all_indexes.begin(), all_indexes.end(),
+                [&child_idx](uint64_t cur_idx)
+                {
+                    assert(0 <= cur_idx && cur_idx <= child_idx.size());
+                    if (cur_idx == 0)
+                    {
+                        return false;
+                    }
+                    else if (0 < cur_idx && cur_idx < child_idx.size())
+                    {
+                        return child_idx[cur_idx - 1] != -1 && child_idx[cur_idx] != child_idx[cur_idx - 1];
+                    }
+                    else
+                    {
+                        return child_idx[child_idx.size() - 1] != -1;
+                    }
+                }
+            );
+
+            assert(range_begins.size() != range_ends.size());
+            pasl::pctl::parallel_for(
+                static_cast<uint64_t>(0), static_cast<uint64_t>(range_begins.size()),
+                [this, &range_begins, &range_ends, &arr, &result, &child_idx, left_border, right_border](uint64_t i)
+                {
+                    uint64_t cur_range_begin = range_begins[i];
+                    uint64_t cur_range_end = range_ends[i];
+
+                    assert(0 <= child_idx[cur_range_begin] < this->children.size());
+                    uint64_t cur_child_idx = child_idx[cur_range_begin];
+                    assert(
+                        cur_child_idx == this->children.size() - 1 || 
+                        this->children[cur_child_idx].get() != nullptr
+                    );
+
+                    if (this->children[cur_child_idx].get() != nullptr)
+                    {
+                        this->children[cur_child_idx]->do_contains(
+                            arr, result,
+                            left_border + cur_range_begin, left_border + cur_range_end
+                        );
+                    }
+                    else
+                    {
+                        pasl::pctl::parallel_for(
+                            cur_range_begin, cur_range_end,
+                            [&result](uint64_t cur_key_idx)
+                            {
+                                result[cur_key_idx] = false;
+                            }
+                        );
+                    }
+                }
+            );
+        }
     }
 };

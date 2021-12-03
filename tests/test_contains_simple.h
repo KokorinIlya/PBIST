@@ -1,8 +1,10 @@
 #pragma once
 
-
 #include <gtest/gtest.h>
 #include "ist_internal/tree.h"
+#include <random>
+#include "config.h"
+#include <unordered_set>
 
 TEST(contains_single, simple)
 {

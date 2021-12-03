@@ -5,6 +5,8 @@
 #include <memory>
 #include "search.h"
 #include <cassert>
+#include "parray.hpp"
+#include "datapar.hpp"
 
 template <typename T>
 struct ist_internal
@@ -14,7 +16,7 @@ public:
         : root(build_from_keys(keys, size_threshold))
     {}
 
-    bool contains(T const& search_key)
+    bool contains(T const& search_key) const
     {
         ist_internal_node<T> const* cur_node = root.get();
         while (true)
@@ -45,6 +47,18 @@ public:
                 }
             }
         }
+    }
+
+    pasl::pctl::parray<bool> contains(pasl::pctl::parray<T> const& arr) const
+    {
+        pasl::pctl::raw raw_marker;
+        if (root.get() == nullptr)
+        {
+            return pasl::pctl::parray<bool>(raw_marker, arr.size(), false);
+        }
+        pasl::pctl::parray<bool> result(raw_marker, arr.size());
+        root->do_contains(arr, result, 0, arr.size());
+        return result;
     }
 private:
     std::unique_ptr<ist_internal_node<T>> root;
