@@ -332,7 +332,7 @@ public:
                      uint64_t left_border, uint64_t right_border) const
     {
         assert(arr.size() == result.size());
-        assert(0 <= left_border < right_border < arr.size());
+        assert(0 <= left_border < right_border <= arr.size());
 
         if (is_terminal())
         {
@@ -380,7 +380,7 @@ public:
             );
 
             pasl::pctl::parray<uint64_t> all_indexes(
-                raw_marker, child_idx.size(),
+                raw_marker, child_idx.size() + 1,
                 [](uint64_t idx)
                 {
                     return idx;
@@ -427,7 +427,7 @@ public:
                 }
             );
 
-            assert(range_begins.size() != range_ends.size());
+            assert(range_begins.size() == range_ends.size());
             pasl::pctl::parallel_for(
                 static_cast<uint64_t>(0), static_cast<uint64_t>(range_begins.size()),
                 [this, &range_begins, &range_ends, &arr, &result, &child_idx, left_border, right_border](uint64_t i)
