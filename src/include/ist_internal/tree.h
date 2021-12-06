@@ -42,7 +42,6 @@ public:
                 {
                     assert(cur_node->children.size() > 0);
                     assert(0 <= idx && idx < cur_node->children.size());
-                    assert(idx == cur_node->children.size() - 1 || cur_node->children[idx].get() != nullptr);
                     cur_node = cur_node->children[idx].get();
                 }
             }
