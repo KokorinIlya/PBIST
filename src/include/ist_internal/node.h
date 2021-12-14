@@ -1,6 +1,7 @@
 #pragma once
 
 #include "parray.hpp"
+#include "psort.hpp"
 #include <memory>
 #include <utility>
 #include <cassert>
@@ -9,6 +10,7 @@
 #include <functional>
 #include "utils.h"
 #include "search.h"
+#include <optional>
 
 template <typename T>
 struct ist_internal;
@@ -24,6 +26,7 @@ private:
 
     const uint64_t initial_size;
     uint64_t cur_size;
+    uint64_t modifications_count;
 
     bool all_keys_exist()
     {
@@ -42,6 +45,14 @@ private:
             }
         );
     }
+
+    /*
+    Insert & delete utils
+    */
+   bool should_rebuild(uint64_t modifications_count) const
+   {
+       return modifications_count + this->modifications_count > this->initial_size;
+   }
 
     /*
     Level-by-level keys dumping
@@ -474,7 +485,8 @@ public:
         //children(std::move(_children)),
         children(pasl::pctl::raw{}, 0),
         initial_size(keys_count),
-        cur_size(keys_count)
+        cur_size(keys_count),
+        modifications_count(static_cast<uint64_t>(0))
     {
         children = std::move(_children);
         assert(keys.size() > 0 && "Empty key array passed to the constructor");
@@ -537,6 +549,36 @@ public:
         else
         {
             this->non_terminal_do_contains(arr, result, left_border, right_border);
+        }
+    }
+
+    std::optional<std::unique_ptr<ist_internal_node<T>>> do_instert(
+        pasl::pctl::parray<T> const& keys, uint64_t size_threshold,
+        uint64_t left_border, uint64_t right_border)
+    {
+        assert(0 <= left_border < right_border <= keys.size());
+        pasl::pctl::raw raw_marker;
+        uint64_t new_keys_count = right_border - left_border;
+
+        if (is_terminal() || should_rebuild(new_keys_count))
+        {
+            pasl::pctl::parray<T> cur_keys = get_keys();
+            pasl::pctl::parray<T> all_keys(raw_marker, cur_keys.size() + new_keys_count);
+            pasl::pctl::merge(
+                cur_keys.begin(), cur_keys.end(),
+                keys.begin() + left_border, keys.begin() + right_border,
+                all_keys.begin(),
+                [](T const& a, T const& b)
+                {
+                    return a < b;
+                }
+            );
+            return build_from_keys(all_keys, size_threshold);
+        }
+        else
+        {
+            this->modifications_count += new_keys_count;
+            // TODO
         }
     }
 };
