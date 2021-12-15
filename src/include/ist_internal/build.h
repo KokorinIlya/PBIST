@@ -8,10 +8,12 @@
 #include <cassert>
 #include <utility>
 #include <memory>
-#include "node.h"
 #include <functional>
 #include <iostream>
 #include <string>
+
+template <typename T>
+struct ist_internal_node;
 
 template <typename T>
 std::unique_ptr<ist_internal_node<T>> do_build_from_keys(

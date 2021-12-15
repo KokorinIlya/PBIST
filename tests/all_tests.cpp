@@ -3,3 +3,4 @@
 #include "search/test_binary_search.h"
 #include "test_contains_simple.h"
 #include "test_contains_batch.h"
+#include "test_insert.h"

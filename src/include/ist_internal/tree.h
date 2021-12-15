@@ -60,7 +60,7 @@ public:
         return result;
     }
 
-    pasl::pctl::parray<bool> insert(pasl::pctl::parray<T> const& arr) const
+    pasl::pctl::parray<bool> insert(pasl::pctl::parray<T> const& arr)
     {
         pasl::pctl::raw raw_marker;
         if (root.get() == nullptr)
@@ -88,7 +88,7 @@ public:
         
         if (insert_keys.size() > 0)
         {
-            auto insert_res = this->do_instert(insert_keys, this->_size_threshold, 0, insert_keys.size());
+            auto insert_res = root->do_insert(insert_keys, this->_size_threshold, 0, insert_keys.size());
             if (insert_res.has_value())
             {
                 root = std::move(insert_res.value());

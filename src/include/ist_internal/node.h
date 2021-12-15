@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "search.h"
 #include <optional>
+#include "build.h"
 
 template <typename T>
 struct ist_internal;
@@ -652,7 +653,7 @@ public:
         }
     }
 
-    std::optional<std::unique_ptr<ist_internal_node<T>>> do_instert(
+    std::optional<std::unique_ptr<ist_internal_node<T>>> do_insert(
         pasl::pctl::parray<T> const& keys, uint64_t size_threshold,
         uint64_t left_border, uint64_t right_border)
     {
@@ -681,7 +682,8 @@ public:
         {
             this->modifications_count += new_keys_count;
             this->cur_size += new_keys_count;
-            // TODO
+            non_terminal_do_insert(keys, size_threshold, left_border, right_border);
+            return {};
         }
     }
 };
