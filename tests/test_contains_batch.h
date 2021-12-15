@@ -43,6 +43,28 @@ TEST(contains_batch, simple)
     }
 }
 
+TEST(contains_batch, empty)
+{
+    pasl::pctl::raw raw_marker;
+    pasl::pctl::parray<int32_t> keys = {};
+    ist_internal<int32_t> tree(keys, 3);
+
+    pasl::pctl::parray<int32_t> keys_to_check(
+        raw_marker, 2000,
+        [](uint64_t idx)
+        {
+            return idx - 1000;
+        }
+    );
+
+    pasl::pctl::parray<bool> contains_res = tree.contains(keys_to_check);
+    ASSERT_EQ(keys_to_check.size(), contains_res.size());
+    for (uint64_t i = 0; i < contains_res.size(); ++i)
+    {
+        ASSERT_FALSE(contains_res[i]);
+    }
+}
+
 TEST(contains_batch, stress)
 {
     uint32_t max_tree_size = 100'000;

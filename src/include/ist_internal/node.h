@@ -474,6 +474,106 @@ private:
         );
     }
 
+    /*
+    Batch insert
+    */
+
+    bool all_keys_not_exist(pasl::pctl::parray<T> const& keys, uint64_t left_border, uint64_t right_border) const
+    {
+        pasl::pctl::parray<std::pair<T, bool>> const& this_keys = this->keys;
+        pasl::pctl::parray< bool> not_exists(
+            right_border - left_border, 
+            [left_border, &this_keys, &keys] (uint64_t i)
+            {
+                auto [idx, found] = binary_search(this_keys, keys[left_border + i]);
+                assert(!found || (0 <= idx && idx < this_keys.size()));
+                return !found || !this_keys[idx].second;
+            }
+        );
+        return pasl::pctl::reduce(
+            not_exists.begin(), not_exists.end(), true,
+            [](bool a, bool b)
+            {
+                return a && b;
+            }
+        );
+    }
+
+    void non_terminal_do_insert(
+       pasl::pctl::parray<T> const& keys, uint64_t size_threshold, 
+       uint64_t left_border, uint64_t right_border)
+    {
+        uint64_t range_size = right_border - left_border;
+        pasl::pctl::raw raw_marker;
+        pasl::pctl::parray<int64_t> child_idx(
+            raw_marker, range_size,
+            [this, &keys, &child_idx, left_border, right_border](uint64_t idx)
+            {
+                uint64_t key_idx = idx + left_border;
+                assert(left_border <= key_idx && key_idx < right_border);
+                auto [search_idx, found] = binary_search(this->keys, keys[key_idx]);
+                if (found)
+                {
+                    assert(this->keys[search_idx].first == keys[key_idx]);
+                    return static_cast<int64_t>(-1);
+                }
+                else
+                {
+                    return static_cast<int64_t>(search_idx);
+                }
+            }
+        );
+
+        auto range_borders = this->get_range_borders(child_idx);
+        pasl::pctl::parray<uint64_t> const& range_begins = range_borders.first;
+        pasl::pctl::parray<uint64_t> const& range_ends = range_borders.second;
+
+        pasl::pctl::parallel_for(
+            static_cast<uint64_t>(0), static_cast<uint64_t>(range_begins.size()),
+            [
+                this, &range_begins, &range_ends, &keys, &child_idx, 
+                left_border, right_border, size_threshold
+            ](uint64_t i)
+            {
+                uint64_t cur_range_begin = range_begins[i];
+                uint64_t cur_range_end = range_ends[i];
+                assert(
+                    0 <= cur_range_begin && 
+                    cur_range_begin < cur_range_end && 
+                    cur_range_end <= child_idx.size()
+                );
+
+                int64_t cur_child_idx = child_idx[cur_range_begin];
+                assert(0 <= cur_child_idx && cur_child_idx < this->children.size());
+
+                uint64_t next_left_border = left_border + cur_range_begin;
+                uint64_t next_right_border = left_border + cur_range_end;
+                assert(
+                    left_border <= next_right_border && 
+                    next_left_border < next_right_border && 
+                    next_right_border <= right_border
+                );
+
+                if (this->children[cur_child_idx].get() != nullptr)
+                {
+                    auto insert_res = this->children[cur_child_idx]->do_insert(
+                        keys, size_threshold, next_left_border, next_right_border
+                    );
+                    if (insert_res.has_value())
+                    {
+                        this->children[cur_child_idx] = std::move(insert_res.value());
+                    }
+                }
+                else
+                {
+                    this->children[cur_child_idx] = do_build_from_keys(
+                        keys, next_left_border, next_right_border, size_threshold
+                    );
+                }
+            }
+        );
+    }
+
 public:
     friend struct ist_internal<T>;
 
@@ -562,6 +662,8 @@ public:
 
         if (is_terminal() || should_rebuild(new_keys_count))
         {
+            assert(all_keys_not_exist(keys, left_border, right_border));
+
             pasl::pctl::parray<T> cur_keys = get_keys();
             pasl::pctl::parray<T> all_keys(raw_marker, cur_keys.size() + new_keys_count);
             pasl::pctl::merge(
@@ -578,6 +680,7 @@ public:
         else
         {
             this->modifications_count += new_keys_count;
+            this->cur_size += new_keys_count;
             // TODO
         }
     }

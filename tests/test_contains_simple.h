@@ -20,6 +20,16 @@ TEST(contains_single, simple)
     ASSERT_FALSE(tree.contains(6));
 }
 
+TEST(contains_single, empty)
+{
+    pasl::pctl::parray<int32_t> keys = {};
+    ist_internal<int32_t> tree(keys, 3);
+    for (int32_t i = -100; i <= 100; ++i)
+    {
+        ASSERT_FALSE(tree.contains(i));
+    }
+}
+
 TEST(contains_single, stress)
 {
     uint32_t max_size = 100'000;
