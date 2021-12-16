@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include "utils.h"
 #include <unordered_set>
+#include "test_utils.h"
 
 TEST(contains_batch, simple)
 {
@@ -81,64 +82,15 @@ TEST(contains_batch, stress)
         uint32_t cur_tree_size = tree_size_distribution(generator);
         uint32_t cur_size_threshold = size_threshold_distribution(generator);
 
-        std::vector<int32_t> keys_v;
-        std::unordered_set<int32_t> keys_set;
-        while (keys_v.size() < cur_tree_size)
-        {
-            assert(keys_v.size() == keys_set.size());
-            int32_t cur_elem =  elements_distribution(generator);
-            if (keys_set.find(cur_elem) != keys_set.end())
-            {
-                continue;
-            }
-            auto insert_res = keys_set.insert(cur_elem);
-            assert(insert_res.second);
-            keys_v.push_back(cur_elem);
-        }
-        assert(keys_v.size() == keys_set.size());
-
-        std::sort(keys_v.begin(), keys_v.end());
-        pasl::pctl::parray<int32_t> keys(
-            keys_v.size(),
-            [&keys_v](long i)
-            {
-                return keys_v[i];
-            }
+        auto [tree_keys_set, tree_keys] = get_build_batch<int32_t>(
+            cur_tree_size, generator, elements_distribution
         );
-        ist_internal<int32_t> tree(keys, cur_size_threshold);
+
+        ist_internal<int32_t> tree(tree_keys, cur_size_threshold);
 
         uint32_t cur_req_size = req_size_distribution(generator);
-        std::vector<int32_t> req_keys_v;
-        std::unordered_set<int32_t> req_keys_set;
-        while (req_keys_v.size() < cur_req_size)
-        {
-            assert(req_keys_v.size() == req_keys_set.size());
-            int32_t cur_elem =  elements_distribution(generator);
-            if (req_keys_set.find(cur_elem) != req_keys_set.end())
-            {
-                continue;
-            }
-            auto insert_res = req_keys_set.insert(cur_elem);
-            assert(insert_res.second);
-            req_keys_v.push_back(cur_elem);
-        }
-        assert(req_keys_v.size() == req_keys_set.size());
-
-        std::sort(req_keys_v.begin(), req_keys_v.end());
-        pasl::pctl::parray<int32_t> req_keys(
-            req_keys_v.size(),
-            [&req_keys_v](long i)
-            {
-                return req_keys_v[i];
-            }
-        );
-
-        pasl::pctl::parray<bool> expected_res(
-            req_keys_v.size(),
-            [&req_keys_v, &keys_set](long i)
-            {
-                return keys_set.find(req_keys_v[i]) != keys_set.end();
-            }
+        auto [expected_res, req_keys] = get_contains_batch<int32_t>(
+            tree_keys_set, cur_req_size, generator, elements_distribution
         );
 
         pasl::pctl::parray<bool> contains_res = tree.contains(req_keys);

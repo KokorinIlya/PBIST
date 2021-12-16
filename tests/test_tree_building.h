@@ -14,6 +14,7 @@
 #include <algorithm>
 #include "config.h"
 #include <unordered_set>
+#include "test_utils.h"
 
 TEST(tree_building, simple)
 {
@@ -134,33 +135,14 @@ TEST(tree_building, stress)
         uint32_t cur_size = size_distribution(generator);
         uint32_t cur_size_threshold = size_threshold_distribution(generator);
 
-        std::vector<int32_t> keys_v;
-        std::unordered_set<int32_t> keys_set;
-        while (keys_v.size() < cur_size)
-        {
-            assert(keys_v.size() == keys_set.size());
-            int32_t cur_elem =  elements_distribution(generator);
-            if (keys_set.find(cur_elem) != keys_set.end())
-            {
-                continue;
-            }
-            auto insert_res = keys_set.insert(cur_elem);
-            assert(insert_res.second);
-            keys_v.push_back(cur_elem);
-        }
-        assert(keys_v.size() == keys_set.size());
+        auto tree_keys = get_build_batch<int32_t>(cur_size, generator, elements_distribution).second;
 
-        std::sort(keys_v.begin(), keys_v.end());
-        pasl::pctl::parray<int32_t> keys(
-            keys_v.size(),
-            [&keys_v](long i)
-            {
-                return keys_v[i];
-            }
-        );
-
-        std::unique_ptr<ist_internal_node<int32_t>> result = build_from_keys(keys, cur_size_threshold);
+        std::unique_ptr<ist_internal_node<int32_t>> result = build_from_keys(tree_keys, cur_size_threshold);
         auto flattened_keys = result->dump_keys_seq();
-        ASSERT_EQ(keys_v, flattened_keys);
+        ASSERT_EQ(tree_keys.size(), flattened_keys.size());
+        for (uint64_t i = 0; i < tree_keys.size(); ++i)
+        {
+            ASSERT_EQ(tree_keys[i], flattened_keys[i]);
+        }
     }
 }
