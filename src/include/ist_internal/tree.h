@@ -50,6 +50,7 @@ public:
 
     pasl::pctl::parray<bool> contains(pasl::pctl::parray<T> const& arr) const
     {
+        // TODO: assert keys are sorted
         pasl::pctl::raw raw_marker;
         if (root.get() == nullptr)
         {
@@ -60,16 +61,20 @@ public:
         return result;
     }
 
-    pasl::pctl::parray<bool> insert(pasl::pctl::parray<T> const& arr)
+    pasl::pctl::parray<bool> insert(pasl::pctl::parray<T> const& keys)
     {
+        // TODO: assert keys are sorted
         pasl::pctl::raw raw_marker;
         if (root.get() == nullptr)
         {
-            root = build_from_keys(arr, this->_size_threshold);
-            return pasl::pctl::parray<bool>(raw_marker, arr.size(), true);
+            root = build_from_keys(keys, this->_size_threshold);
+            return pasl::pctl::parray<bool>(raw_marker, keys.size(), true);
         }
-        pasl::pctl::parray<bool> result = this->contains(arr); // TODO: try non-batch contains
-        assert(result.size() == arr.size());
+        /*
+        TODO: try non-batch contains & contains with inplace inversion
+        */
+        pasl::pctl::parray<bool> result = this->contains(keys);
+        assert(result.size() == keys.size());
 
         pasl::pctl::parallel_for(
             static_cast<uint64_t>(0), static_cast<uint64_t>(result.size()),
@@ -79,7 +84,7 @@ public:
             } 
         );
         pasl::pctl::parray<T> insert_keys = pasl::pctl::filteri(
-            arr.begin(), arr.end(),
+            keys.begin(), keys.end(),
             [&result](uint64_t idx, T const&)
             {
                 return result[idx];
@@ -92,6 +97,37 @@ public:
             if (insert_res.has_value())
             {
                 root = std::move(insert_res.value());
+            }
+        }
+        
+        return result;
+    }
+
+    pasl::pctl::parray<bool> remove(pasl::pctl::parray<T> const& keys)
+    {
+        // TODO: assert keys are sorted
+        pasl::pctl::raw raw_marker;
+        if (root.get() == nullptr)
+        {
+            return pasl::pctl::parray<bool>(raw_marker, keys.size(), false);
+        }
+        pasl::pctl::parray<bool> result = this->contains(keys); // TODO: try non-batch contains
+        assert(result.size() == keys.size());
+
+        pasl::pctl::parray<T> remove_keys = pasl::pctl::filteri(
+            keys.begin(), keys.end(),
+            [&result](uint64_t idx, T const&)
+            {
+                return result[idx];
+            }
+        );
+        
+        if (remove_keys.size() > 0)
+        {
+            auto remove_res = root->do_remove(remove_keys, this->_size_threshold, 0, remove_keys.size());
+            if (remove_res.has_value())
+            {
+                root = std::move(remove_res.value());
             }
         }
         

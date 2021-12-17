@@ -478,7 +478,6 @@ private:
     /*
     Batch insert
     */
-
     bool all_keys_not_exist(pasl::pctl::parray<T> const& keys, uint64_t left_border, uint64_t right_border) const
     {
         pasl::pctl::parray<std::pair<T, bool>> const& this_keys = this->keys;
@@ -487,7 +486,13 @@ private:
             [left_border, &this_keys, &keys] (uint64_t i)
             {
                 auto [idx, found] = binary_search(this_keys, keys[left_border + i]);
-                assert(!found || (0 <= idx && idx < this_keys.size()));
+                assert(
+                    !found || 
+                    (
+                        0 <= idx && idx < this_keys.size() && 
+                        this_keys[idx].first == keys[left_border + i]
+                    )
+                );
                 return !found || !this_keys[idx].second;
             }
         );
@@ -500,15 +505,15 @@ private:
         );
     }
 
-    void non_terminal_do_insert(
-       pasl::pctl::parray<T> const& keys, uint64_t size_threshold, 
-       uint64_t left_border, uint64_t right_border)
+    pasl::pctl::parray<int64_t> get_child_idx(
+        pasl::pctl::parray<T> const& keys, 
+        uint64_t left_border, uint64_t right_border) const
     {
         uint64_t range_size = right_border - left_border;
         pasl::pctl::raw raw_marker;
-        pasl::pctl::parray<int64_t> child_idx(
+        return pasl::pctl::parray<int64_t>(
             raw_marker, range_size,
-            [this, &keys, &child_idx, left_border, right_border](uint64_t idx)
+            [this, &keys, left_border, right_border](uint64_t idx)
             {
                 uint64_t key_idx = idx + left_border;
                 assert(left_border <= key_idx && key_idx < right_border);
@@ -524,7 +529,13 @@ private:
                 }
             }
         );
+    }
 
+    void non_terminal_do_insert(
+       pasl::pctl::parray<T> const& keys, uint64_t size_threshold, 
+       uint64_t left_border, uint64_t right_border)
+    {
+        pasl::pctl::parray<int64_t> child_idx = get_child_idx(keys, left_border, right_border);
         auto range_borders = this->get_range_borders(child_idx);
         pasl::pctl::parray<uint64_t> const& range_begins = range_borders.first;
         pasl::pctl::parray<uint64_t> const& range_ends = range_borders.second;
@@ -570,6 +581,83 @@ private:
                     this->children[cur_child_idx] = do_build_from_keys(
                         keys, next_left_border, next_right_border, size_threshold
                     );
+                }
+            }
+        );
+    }
+
+    /*
+    Batch remove
+    */
+   void non_terminal_do_remove(
+       pasl::pctl::parray<T> const& keys, uint64_t size_threshold, 
+       uint64_t left_border, uint64_t right_border)
+    {
+        uint64_t range_size = right_border - left_border;
+        pasl::pctl::raw raw_marker;
+        pasl::pctl::parray<int64_t> child_idx(raw_marker, range_size);
+
+        pasl::pctl::parallel_for(
+            left_border, right_border,
+            [this, &keys, &child_idx, left_border, right_border](uint64_t key_idx)
+            {
+                assert(left_border <= key_idx && key_idx < right_border);
+                auto [search_idx, found] = binary_search(this->keys, keys[key_idx]);
+
+                if (found)
+                {
+                    assert(
+                        0 <= search_idx && search_idx < this->keys.size() &&
+                        this->keys[search_idx].first == keys[key_idx] &&
+                        this->keys[search_idx].second
+                    );
+                    this->keys[search_idx].second = false;
+                    child_idx[key_idx - left_border] = -1;
+                }
+                else
+                {
+                    child_idx[key_idx - left_border] = search_idx;
+                }
+            }
+        );
+
+        auto range_borders = this->get_range_borders(child_idx);
+        pasl::pctl::parray<uint64_t> const& range_begins = range_borders.first;
+        pasl::pctl::parray<uint64_t> const& range_ends = range_borders.second;
+
+        pasl::pctl::parallel_for(
+            static_cast<uint64_t>(0), static_cast<uint64_t>(range_begins.size()),
+            [
+                this, &range_begins, &range_ends, &keys, &child_idx, 
+                left_border, right_border, size_threshold
+            ](uint64_t i)
+            {
+                uint64_t cur_range_begin = range_begins[i];
+                uint64_t cur_range_end = range_ends[i];
+                assert(
+                    0 <= cur_range_begin && 
+                    cur_range_begin < cur_range_end && 
+                    cur_range_end <= child_idx.size()
+                );
+
+                int64_t cur_child_idx = child_idx[cur_range_begin];
+                assert(0 <= cur_child_idx && cur_child_idx < this->children.size());
+
+                uint64_t next_left_border = left_border + cur_range_begin;
+                uint64_t next_right_border = left_border + cur_range_end;
+                assert(
+                    left_border <= next_right_border && 
+                    next_left_border < next_right_border && 
+                    next_right_border <= right_border
+                );
+
+                assert(this->children[cur_child_idx].get() != nullptr);
+                auto remove_res = this->children[cur_child_idx]->do_remove(
+                    keys, size_threshold, next_left_border, next_right_border
+                );
+                if (remove_res.has_value())
+                {
+                    this->children[cur_child_idx] = std::move(remove_res.value());
                 }
             }
         );
@@ -671,10 +759,7 @@ public:
                 cur_keys.begin(), cur_keys.end(),
                 keys.begin() + left_border, keys.begin() + right_border,
                 all_keys.begin(),
-                [](T const& a, T const& b)
-                {
-                    return a < b;
-                }
+                std::less<T>{}
             );
             return build_from_keys(all_keys, size_threshold);
         }
@@ -683,6 +768,53 @@ public:
             this->modifications_count += new_keys_count;
             this->cur_size += new_keys_count;
             non_terminal_do_insert(keys, size_threshold, left_border, right_border);
+            return {};
+        }
+    }
+
+    std::optional<std::unique_ptr<ist_internal_node<T>>> do_remove(
+        pasl::pctl::parray<T> const& keys, uint64_t size_threshold,
+        uint64_t left_border, uint64_t right_border)
+    {
+        assert(0 <= left_border < right_border <= keys.size());
+        pasl::pctl::raw raw_marker;
+        uint64_t keys_count = right_border - left_border;
+        assert(this->cur_size >= keys_count);
+        this->modifications_count += keys_count;
+        this->cur_size -= keys_count;
+
+        if (this->is_terminal())
+        {
+            pasl::pctl::parallel_for(
+                left_border, right_border,
+                [this, &keys](uint64_t remove_key_idx)
+                {
+                    auto [idx, found] = binary_search(this->keys, keys[remove_key_idx]);
+                    assert(
+                        found && 0 <= idx && idx < this->keys.size() && 
+                        this->keys[idx].first == keys[remove_key_idx] && 
+                        this->keys[idx].second
+                    );
+                    this->keys[idx].second = false;
+                }
+            );
+        }
+        else
+        {
+            non_terminal_do_remove(keys, size_threshold, left_border, right_border);
+        }
+
+        /*
+        TODO: implement parallel setminus on sorted arrays and perform rebuilding before
+        removing keys
+        */
+        if (should_rebuild(0))
+        {
+            pasl::pctl::parray<T> cur_keys = get_keys();
+            return build_from_keys(cur_keys, size_threshold);
+        }
+        else
+        {
             return {};
         }
     }
