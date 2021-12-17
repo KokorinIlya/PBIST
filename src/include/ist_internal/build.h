@@ -58,9 +58,9 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
     pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> children(raw_marker, rep_size + 1);
 
     // TODO: loop body is not constant, use Comp-based pfor
-    pasl::pctl::parallel_for<uint64_t, std::function<void(long)>>(
-        0, rep_size + 1,
-        [block_size, size_threshold, left, right, rep_size, &reps, &children, &keys] (long child_idx)
+    pasl::pctl::parallel_for(
+        static_cast<uint64_t>(0), static_cast<uint64_t>(rep_size + 1),
+        [block_size, size_threshold, left, right, rep_size, &reps, &children, &keys] (uint64_t child_idx)
         {
             if (child_idx < rep_size)
             {

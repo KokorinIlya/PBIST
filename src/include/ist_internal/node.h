@@ -316,31 +316,8 @@ private:
     }
 
     /*
-    Batch contains
+    Batch utils
     */
-    void terminal_do_contains(
-       pasl::pctl::parray<T> const& arr, pasl::pctl::parray<bool>& result, 
-       uint64_t left_border, uint64_t right_border) const
-    {
-        pasl::pctl::parallel_for(
-            left_border, right_border,
-            [this, &arr, &result, left_border, right_border](long key_idx)
-            {
-                assert(left_border <= key_idx && key_idx < right_border);
-                auto [search_idx, found] = binary_search(this->keys, arr[key_idx]);
-                if (found)
-                {
-                    assert(this->keys[search_idx].first == arr[key_idx]);
-                    result[key_idx] = this->keys[search_idx].second;
-                }
-                else
-                {
-                    result[key_idx] = false;
-                }
-            }
-        );
-    }
-
     std::pair<pasl::pctl::parray<uint64_t>, pasl::pctl::parray<uint64_t>> get_range_borders(
         pasl::pctl::parray<int64_t> const& child_idx) const
     {
@@ -402,6 +379,9 @@ private:
         return {range_begins, range_ends};
     }
      
+    /*
+    Batch contains
+    */
     void non_terminal_do_contains(
        pasl::pctl::parray<T> const& arr, pasl::pctl::parray<bool>& result, 
        uint64_t left_border, uint64_t right_border) const
@@ -505,37 +485,38 @@ private:
         );
     }
 
-    pasl::pctl::parray<int64_t> get_child_idx(
-        pasl::pctl::parray<T> const& keys, 
-        uint64_t left_border, uint64_t right_border) const
-    {
-        uint64_t range_size = right_border - left_border;
-        pasl::pctl::raw raw_marker;
-        return pasl::pctl::parray<int64_t>(
-            raw_marker, range_size,
-            [this, &keys, left_border, right_border](uint64_t idx)
-            {
-                uint64_t key_idx = idx + left_border;
-                assert(left_border <= key_idx && key_idx < right_border);
-                auto [search_idx, found] = binary_search(this->keys, keys[key_idx]);
-                if (found)
-                {
-                    assert(this->keys[search_idx].first == keys[key_idx]);
-                    return static_cast<int64_t>(-1);
-                }
-                else
-                {
-                    return static_cast<int64_t>(search_idx);
-                }
-            }
-        );
-    }
-
     void non_terminal_do_insert(
        pasl::pctl::parray<T> const& keys, uint64_t size_threshold, 
        uint64_t left_border, uint64_t right_border)
     {
-        pasl::pctl::parray<int64_t> child_idx = get_child_idx(keys, left_border, right_border);
+        uint64_t range_size = right_border - left_border;
+        pasl::pctl::raw raw_marker;
+        pasl::pctl::parray<int64_t> child_idx(raw_marker, range_size);
+
+        pasl::pctl::parallel_for(
+            left_border, right_border,
+            [this, &keys, &child_idx, left_border, right_border](uint64_t key_idx)
+            {
+                assert(left_border <= key_idx && key_idx < right_border);
+                auto [search_idx, found] = binary_search(this->keys, keys[key_idx]);
+
+                if (found)
+                {
+                    assert(
+                        0 <= search_idx && search_idx < this->keys.size() &&
+                        this->keys[search_idx].first == keys[key_idx] &&
+                        !this->keys[search_idx].second
+                    );
+                    this->keys[search_idx].second = true;
+                    child_idx[key_idx - left_border] = -1;
+                }
+                else
+                {
+                    child_idx[key_idx - left_border] = search_idx;
+                }
+            }
+        );
+        
         auto range_borders = this->get_range_borders(child_idx);
         pasl::pctl::parray<uint64_t> const& range_begins = range_borders.first;
         pasl::pctl::parray<uint64_t> const& range_ends = range_borders.second;
@@ -733,11 +714,27 @@ public:
 
         if (is_terminal())
         {
-            this->terminal_do_contains(arr, result, left_border, right_border);
+            pasl::pctl::parallel_for(
+                left_border, right_border,
+                [this, &arr, &result, left_border, right_border](long key_idx)
+                {
+                    assert(left_border <= key_idx && key_idx < right_border);
+                    auto [search_idx, found] = binary_search(this->keys, arr[key_idx]);
+                    if (found)
+                    {
+                        assert(this->keys[search_idx].first == arr[key_idx]);
+                        result[key_idx] = this->keys[search_idx].second;
+                    }
+                    else
+                    {
+                        result[key_idx] = false;
+                    }
+                }
+            );
         }
         else
         {
-            this->non_terminal_do_contains(arr, result, left_border, right_border);
+            non_terminal_do_contains(arr, result, left_border, right_border);
         }
     }
 
@@ -751,6 +748,11 @@ public:
 
         if (is_terminal() || should_rebuild(new_keys_count))
         {
+            /*
+            all_keys_not_exist assertion is guaranteed not to return false-positive result
+            only for terminal nodes (since inserted keys can exist in children of non-terminal node). 
+            However, it's still better, than nothing.
+            */
             assert(all_keys_not_exist(keys, left_border, right_border));
 
             pasl::pctl::parray<T> cur_keys = get_keys();
@@ -761,6 +763,7 @@ public:
                 all_keys.begin(),
                 std::less<T>{}
             );
+            // TODO: check that the resulting array is strictly ordered
             return build_from_keys(all_keys, size_threshold);
         }
         else
@@ -783,7 +786,7 @@ public:
         this->modifications_count += keys_count;
         this->cur_size -= keys_count;
 
-        if (this->is_terminal())
+        if (is_terminal())
         {
             pasl::pctl::parallel_for(
                 left_border, right_border,
