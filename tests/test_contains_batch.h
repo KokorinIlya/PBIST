@@ -44,7 +44,7 @@ TEST(contains_batch, simple)
     }
 }
 
-TEST(contains_batch, empty)
+TEST(contains_batch, empty_tree)
 {
     pasl::pctl::raw raw_marker;
     pasl::pctl::parray<int32_t> keys = {};
@@ -64,6 +64,17 @@ TEST(contains_batch, empty)
     {
         ASSERT_FALSE(contains_res[i]);
     }
+}
+
+TEST(contains_batch, empty_req)
+{
+    pasl::pctl::raw raw_marker;
+    pasl::pctl::parray<int32_t> keys = {1, 7, 9, 100, 103, 105};
+    ist_internal<int32_t> tree(keys, 3);
+
+    pasl::pctl::parray<int32_t> req = {};
+    pasl::pctl::parray<bool> contains_res = tree.contains(req);
+    ASSERT_EQ(0, contains_res.size());
 }
 
 TEST(contains_batch, stress)

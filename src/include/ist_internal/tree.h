@@ -7,6 +7,7 @@
 #include <cassert>
 #include "parray.hpp"
 #include "datapar.hpp"
+#include "utils.h"
 
 template <typename T>
 struct ist_internal
@@ -48,22 +49,30 @@ public:
         }
     }
 
-    pasl::pctl::parray<bool> contains(pasl::pctl::parray<T> const& arr) const
+    pasl::pctl::parray<bool> contains(pasl::pctl::parray<T> const& keys) const
     {
-        // TODO: assert keys are sorted
+        assert(is_sorted(keys, true));
+        if (keys.size() == 0)
+        {
+            return pasl::pctl::parray<bool>(0);
+        }
         pasl::pctl::raw raw_marker;
         if (root.get() == nullptr)
         {
-            return pasl::pctl::parray<bool>(raw_marker, arr.size(), false);
+            return pasl::pctl::parray<bool>(raw_marker, keys.size(), false);
         }
-        pasl::pctl::parray<bool> result(raw_marker, arr.size());
-        root->do_contains(arr, result, 0, arr.size());
+        pasl::pctl::parray<bool> result(raw_marker, keys.size());
+        root->do_contains(keys, result, 0, keys.size());
         return result;
     }
 
     pasl::pctl::parray<bool> insert(pasl::pctl::parray<T> const& keys)
     {
-        // TODO: assert keys are sorted
+        assert(is_sorted(keys, true));
+        if (keys.size() == 0)
+        {
+            return pasl::pctl::parray<bool>(0);
+        }
         pasl::pctl::raw raw_marker;
         if (root.get() == nullptr)
         {
@@ -105,7 +114,11 @@ public:
 
     pasl::pctl::parray<bool> remove(pasl::pctl::parray<T> const& keys)
     {
-        // TODO: assert keys are sorted
+        assert(is_sorted(keys, true));
+        if (keys.size() == 0)
+        {
+            return pasl::pctl::parray<bool>(0);
+        }
         pasl::pctl::raw raw_marker;
         if (root.get() == nullptr)
         {

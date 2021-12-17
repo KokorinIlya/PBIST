@@ -763,7 +763,7 @@ public:
                 all_keys.begin(),
                 std::less<T>{}
             );
-            // TODO: check that the resulting array is strictly ordered
+            assert(is_sorted(all_keys, true));
             return build_from_keys(all_keys, size_threshold);
         }
         else
@@ -814,6 +814,7 @@ public:
         if (should_rebuild(0))
         {
             pasl::pctl::parray<T> cur_keys = get_keys();
+            assert(is_sorted(cur_keys, true));
             return build_from_keys(cur_keys, size_threshold);
         }
         else
