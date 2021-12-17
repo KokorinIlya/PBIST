@@ -146,6 +146,21 @@ public:
         
         return result;
     }
+
+    /*
+    O(n) Span, use for testing only
+    */
+    uint64_t calc_node_size_seq() const
+    {
+        if (root.get() == nullptr)
+        {
+            return 0;
+        }
+        else
+        {
+            return root->calc_node_size_seq();
+        }
+    }
 private:
     std::unique_ptr<ist_internal_node<T>> root;
     const uint64_t _size_threshold;

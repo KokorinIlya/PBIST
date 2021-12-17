@@ -5,3 +5,4 @@
 #include "test_contains_batch.h"
 #include "test_insert.h"
 #include "test_remove.h"
+#include "stress_test.h"

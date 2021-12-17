@@ -197,7 +197,7 @@ TEST(remove, single_remove_stress)
     }
 }
 
-TEST(remove, multiple_insert_stress)
+TEST(remove, multiple_removes_stress)
 {
     uint32_t max_tree_size = 100'000;
     uint32_t max_req_size = 10'000;

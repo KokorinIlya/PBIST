@@ -280,7 +280,11 @@ private:
                     cur_right = left + borders[border_idx + 1];
                 }
 
-                if (this->children[child_idx].get() != nullptr)
+                assert(
+                    this->children[child_idx].get() == nullptr ||
+                    this->children[child_idx]->cur_size == cur_right - cur_left
+                );
+                if (this->children[child_idx].get() != nullptr && cur_right > cur_left)
                 {
                     this->children[child_idx]->do_get_keys(keys_holder, cur_left, cur_right);
                 }
@@ -290,10 +294,10 @@ private:
 
     void do_get_keys(pasl::pctl::parray<T>& keys_holder, uint64_t left, uint64_t right) const
     {
-        pasl::pctl::parray<uint64_t> const& borders = get_borders();
-
-        assert(borders.size() > 0);
         assert(0 <= left && left < right && right <= keys_holder.size());
+
+        pasl::pctl::parray<uint64_t> const& borders = get_borders();
+        assert(borders.size() > 0);
         assert(borders.size() == keys.size() + children.size());
 
         if (is_terminal())
@@ -690,6 +694,33 @@ public:
         keys_holder holder;
         do_dump_keys_by_level_seq(holder, 0);
         return holder;
+    }
+
+    /*
+    O(n) Span, use for testing only
+    */
+    uint64_t calc_node_size_seq() const
+    {
+        /*
+        TODO: make it parallel & check in some (small) tests 
+        */
+        uint64_t total_size = 0;
+        for (uint64_t i = 0; i < keys.size(); ++i)
+        {
+            if (keys[i].second)
+            {
+                ++total_size;
+            }
+        }
+        for (uint64_t i = 0; i < children.size(); ++i)
+        {
+            if (children[i].get() != nullptr)
+            {
+                total_size += children[i]->calc_node_size_seq();
+            }
+        }
+        assert(total_size == this->cur_size);
+        return total_size;
     }
 
     /*
