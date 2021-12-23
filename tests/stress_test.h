@@ -3,21 +3,19 @@
 #include <gtest/gtest.h>
 #include "ist_internal/tree.h"
 #include <random>
-#include "config.h"
 #include <unordered_set>
 #include "utils.h"
 #include <unordered_set>
 #include "test_utils.h"
 
-TEST(all_operations, stress)
+void do_test_all_operations_stress(
+    uint32_t MAX_TREE_SIZE, uint32_t MAX_REQ_SIZE, uint32_t TESTS_COUNT, uint32_t REQUESTS_PER_TEST,
+    int32_t KEYS_FROM, int32_t KEYS_TO, bool CHECK_SIZES)
 {
-    uint32_t max_tree_size = 100'000;
-    uint32_t max_req_size = 100'000;
-
     std::default_random_engine generator(time(nullptr));
-    std::uniform_int_distribution<uint32_t> tree_size_distribution(1, max_tree_size);
-    std::uniform_int_distribution<uint32_t> req_size_distribution(1, max_req_size);
-    std::uniform_int_distribution<int32_t> elements_distribution(-200'000, 00'000);
+    std::uniform_int_distribution<uint32_t> tree_size_distribution(1, MAX_TREE_SIZE);
+    std::uniform_int_distribution<uint32_t> req_size_distribution(1, MAX_REQ_SIZE);
+    std::uniform_int_distribution<int32_t> elements_distribution(KEYS_FROM, KEYS_TO);
     std::uniform_int_distribution<uint32_t> size_threshold_distribution(3, 10);
     std::uniform_int_distribution<uint32_t> req_type_distribution(1, 3);
 
@@ -32,7 +30,7 @@ TEST(all_operations, stress)
 
         ist_internal<int32_t> tree(tree_keys, cur_size_threshold);
 
-        for (uint32_t j = 0; j < REQUESTS_PER_TEST / 10; ++j)
+        for (uint32_t j = 0; j < REQUESTS_PER_TEST; ++j)
         {
             uint32_t cur_req_size = req_size_distribution(generator);
             uint32_t cur_req_type = req_type_distribution(generator);
@@ -74,6 +72,41 @@ TEST(all_operations, stress)
                     ASSERT_EQ(exp_contains_res[i], contains_res[i]);
                 }
             }
+
+            if (CHECK_SIZES)
+            {
+                tree.calc_tree_size();
+            }
         }
     }
+}
+
+TEST(all_operations, stress)
+{
+    uint32_t MAX_TREE_SIZE = 100'000;
+    uint32_t MAX_REQ_SIZE = 100'000;
+    uint32_t TESTS_COUNT = 200;
+    uint32_t REQUESTS_PER_TEST = 10;
+    int32_t KEYS_FROM = -200'000;
+    int32_t KEYS_TO = 200'000;
+
+    do_test_all_operations_stress(
+        MAX_TREE_SIZE, MAX_REQ_SIZE, TESTS_COUNT, REQUESTS_PER_TEST, 
+        KEYS_FROM, KEYS_TO, false
+    );
+}
+
+TEST(all_operations, stress_check_sizes)
+{
+    uint32_t MAX_TREE_SIZE = 10'000;
+    uint32_t MAX_REQ_SIZE = 10'000;
+    uint32_t TESTS_COUNT = 50;
+    uint32_t REQUESTS_PER_TEST = 10;
+    int32_t KEYS_FROM = -20'000;
+    int32_t KEYS_TO = 20'000;
+
+    do_test_all_operations_stress(
+        MAX_TREE_SIZE, MAX_REQ_SIZE, TESTS_COUNT, REQUESTS_PER_TEST, 
+        KEYS_FROM, KEYS_TO, true
+    );
 }

@@ -3,7 +3,6 @@
 #include <gtest/gtest.h>
 #include "ist_internal/tree.h"
 #include <random>
-#include "config.h"
 #include <unordered_set>
 #include "utils.h"
 #include <unordered_set>

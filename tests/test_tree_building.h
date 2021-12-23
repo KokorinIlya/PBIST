@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <gtest/gtest.h>
 #include "ist_internal/node.h"
 #include "ist_internal/build.h"
@@ -12,7 +11,6 @@
 #include <iostream>
 #include <random>
 #include <algorithm>
-#include "config.h"
 #include <unordered_set>
 #include "test_utils.h"
 
@@ -123,12 +121,15 @@ TEST(tree_building, signle_level)
 
 TEST(tree_building, stress) 
 {
-    uint32_t max_size = 100'000;
+    uint32_t MAX_SIZE = 100'000;
+    uint32_t TESTS_COUNT = 200;
+    int32_t KEYS_FROM = -1'000'000;
+    int32_t KEYS_TO = 1'000'000;
 
     std::default_random_engine generator(time(nullptr));
-    std::uniform_int_distribution<uint32_t> size_distribution(1, max_size);
+    std::uniform_int_distribution<uint32_t> size_distribution(1, MAX_SIZE);
     std::uniform_int_distribution<uint32_t> size_threshold_distribution(3, 10);
-    std::uniform_int_distribution<int32_t> elements_distribution(-1'000'000, 1'000'000);
+    std::uniform_int_distribution<int32_t> elements_distribution(KEYS_FROM, KEYS_TO);
 
     for (uint32_t i = 0; i < TESTS_COUNT; ++i)
     {
@@ -143,6 +144,15 @@ TEST(tree_building, stress)
         for (uint64_t i = 0; i < tree_keys.size(); ++i)
         {
             ASSERT_EQ(tree_keys[i], flattened_keys[i]);
+        }
+
+        if (result.get() == nullptr)
+        {
+            ASSERT_EQ(0, cur_size);
+        }
+        else
+        {
+            ASSERT_EQ(cur_size, result->calc_node_size());
         }
     }
 }

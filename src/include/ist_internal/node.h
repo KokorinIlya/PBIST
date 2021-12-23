@@ -697,28 +697,47 @@ public:
     }
 
     /*
-    O(n) Span, use for testing only
+    Must return exactly the contents of this->cur_size, use for testing only
     */
-    uint64_t calc_node_size_seq() const
+    uint64_t calc_node_size() const
     {
-        /*
-        TODO: make it parallel & check in some (small) tests 
-        */
-        uint64_t total_size = 0;
-        for (uint64_t i = 0; i < keys.size(); ++i)
-        {
-            if (keys[i].second)
+        pasl::pctl::parray<uint64_t> keys_exist(
+            this->keys.size(),
+            [this](uint64_t idx)
             {
-                ++total_size;
+                return static_cast<uint64_t>(this->keys[idx].second);
             }
-        }
-        for (uint64_t i = 0; i < children.size(); ++i)
-        {
-            if (children[i].get() != nullptr)
+        );
+        uint64_t this_keys_count = pasl::pctl::reduce(
+            keys_exist.begin(), keys_exist.end(), static_cast<uint64_t>(0),
+            [](uint64_t a, uint64_t b)
             {
-                total_size += children[i]->calc_node_size_seq();
+                return a + b;
             }
-        }
+        );
+
+        pasl::pctl::parray<uint64_t> subtree_sizes(
+            this->children.size(),
+            [this](uint64_t idx)
+            {
+                if (this->children[idx].get() == nullptr)
+                {
+                    return static_cast<uint64_t>(0);
+                }
+                else
+                {
+                    return this->children[idx]->calc_node_size();
+                }
+            }
+        );
+        uint64_t total_size = pasl::pctl::reduce(
+            subtree_sizes.begin(), subtree_sizes.end(), static_cast<uint64_t>(0),
+            [](uint64_t a, uint64_t b)
+            {
+                return a + b;
+            }
+        ) + this_keys_count;
+
         assert(total_size == this->cur_size);
         return total_size;
     }

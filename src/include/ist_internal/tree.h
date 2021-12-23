@@ -148,9 +148,9 @@ public:
     }
 
     /*
-    O(n) Span, use for testing only
+    Must return exactly the contents of root->cur_size (or 0, if root is nullptr), use for testing only
     */
-    uint64_t calc_node_size_seq() const
+    uint64_t calc_tree_size() const
     {
         if (root.get() == nullptr)
         {
@@ -158,7 +158,7 @@ public:
         }
         else
         {
-            return root->calc_node_size_seq();
+            return root->calc_node_size();
         }
     }
 private:
