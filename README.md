@@ -29,7 +29,7 @@ Parallel-Batched Interpolation Search Tree
 * Run from project directory (`/home/ubuntu/PBIST`)
 * `git clone https://github.com/google/googletest.git tests/lib`
 
-## Compiling via CMake
+## Compiling
 
 * Run from project directory (`/home/ubuntu/PBIST`)
 * `CC=bin/clang CXX=bin/clang++ cmake .`

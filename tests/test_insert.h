@@ -6,7 +6,6 @@
 #include <unordered_set>
 #include "utils.h"
 #include <unordered_set>
-#include "config.h"
 
 TEST(insert, insert_empty_simple)
 {
@@ -112,109 +111,32 @@ TEST(insert, empty_req)
     ASSERT_EQ(0, contains_res.size());
 }
 
-TEST(insert, insert_empty_stress)
+void do_test_insert_stress(
+    uint32_t TESTS_COUNT, uint32_t REQ_PER_TEST, uint32_t MAX_INITIAL_TREE_SIZE, uint32_t MAX_REQ_SIZE,
+    int32_t KEYS_FROM, int32_t KEYS_TO, bool CHECK_SIZES)
 {
-    uint32_t max_tree_size = 100'000;
-    uint32_t max_req_size = 100'000;
-
     std::default_random_engine generator(time(nullptr));
-    std::uniform_int_distribution<uint32_t> tree_size_distribution(1, max_tree_size);
-    std::uniform_int_distribution<uint32_t> req_size_distribution(1, max_req_size);
-    std::uniform_int_distribution<int32_t> elements_distribution(-100'000, 100'000);
+    std::uniform_int_distribution<uint32_t> req_size_distribution(1, MAX_REQ_SIZE);
+    std::uniform_int_distribution<int32_t> elements_distribution(KEYS_FROM, KEYS_TO);
     std::uniform_int_distribution<uint32_t> size_threshold_distribution(3, 10);
 
     for (uint32_t i = 0; i < TESTS_COUNT; ++i)
-    {
-        uint32_t cur_tree_size = tree_size_distribution(generator);
-        uint32_t cur_size_threshold = size_threshold_distribution(generator);
-
-        auto [keys_set, keys] = get_build_batch<int32_t>(cur_tree_size, generator, elements_distribution);
-        ist_internal<int32_t> tree({}, cur_size_threshold);
-        pasl::pctl::parray<bool> insert_res = tree.insert(keys);
-        ASSERT_EQ(keys.size(), insert_res.size());
-        for (uint64_t i = 0; i < insert_res.size(); ++i)
+    {        
+        pasl::pctl::parray<int32_t> keys = {};
+        std::unordered_set<int32_t> keys_set;
+        if (MAX_INITIAL_TREE_SIZE != 0)
         {
-            ASSERT_TRUE(insert_res[i]);
+            std::uniform_int_distribution<uint32_t> tree_size_distribution(1, MAX_INITIAL_TREE_SIZE);
+            uint32_t cur_tree_size = tree_size_distribution(generator);
+            auto buil_batch = get_build_batch<int32_t>(cur_tree_size, generator, elements_distribution);
+            keys = buil_batch.second;
+            keys_set = buil_batch.first;
         }
-
-        uint32_t cur_req_size = req_size_distribution(generator);
-        auto [expected_res, req_keys] = get_contains_batch<int32_t>(
-            keys_set, cur_tree_size, generator, elements_distribution
-        );
-
-        pasl::pctl::parray<bool> contains_res = tree.contains(req_keys);
-        ASSERT_EQ(expected_res.size(), contains_res.size());
-        for (uint64_t i = 0; i < contains_res.size(); ++i)
-        {
-            ASSERT_EQ(expected_res[i], contains_res[i]);
-        }
-    }
-}
-
-TEST(insert, single_insert_non_empty_stress)
-{
-    uint32_t max_tree_size = 100'000;
-    uint32_t max_req_size = 100'000;
-
-    std::default_random_engine generator(time(nullptr));
-    std::uniform_int_distribution<uint32_t> tree_size_distribution(1, max_tree_size);
-    std::uniform_int_distribution<uint32_t> req_size_distribution(1, max_req_size);
-    std::uniform_int_distribution<int32_t> elements_distribution(-200'000, 200'000);
-    std::uniform_int_distribution<uint32_t> size_threshold_distribution(3, 10);
-
-    for (uint32_t i = 0; i < TESTS_COUNT; ++i)
-    {
-        uint32_t cur_tree_size = tree_size_distribution(generator);
+        
         uint32_t cur_size_threshold = size_threshold_distribution(generator);
-
-        auto [keys_set, keys] = get_build_batch<int32_t>(cur_tree_size, generator, elements_distribution);
         ist_internal<int32_t> tree(keys, cur_size_threshold);
 
-        uint32_t cur_insert_size = req_size_distribution(generator);
-        auto [exp_insert_res, insert_keys] = get_insert_batch<int32_t>(
-            keys_set, cur_insert_size, generator, elements_distribution
-        );
-        pasl::pctl::parray<bool> insert_res = tree.insert(insert_keys);
-        ASSERT_EQ(exp_insert_res.size(), insert_res.size());
-        for (uint64_t i = 0; i < insert_res.size(); ++i)
-        {
-            ASSERT_EQ(exp_insert_res[i], insert_res[i]);
-        }
-
-        uint32_t cur_contains_size = req_size_distribution(generator);
-        auto [exp_contains_res, contains_keys] = get_contains_batch<int32_t>(
-            keys_set, cur_contains_size, generator, elements_distribution
-        );
-
-        pasl::pctl::parray<bool> contains_res = tree.contains(contains_keys);
-        ASSERT_EQ(exp_contains_res.size(), contains_res.size());
-        for (uint64_t i = 0; i < contains_res.size(); ++i)
-        {
-            ASSERT_EQ(exp_contains_res[i], contains_res[i]);
-        }
-    }
-}
-
-TEST(insert, multiple_insert_stress)
-{
-    uint32_t max_tree_size = 100'000;
-    uint32_t max_req_size = 100'000;
-
-    std::default_random_engine generator(time(nullptr));
-    std::uniform_int_distribution<uint32_t> tree_size_distribution(1, max_tree_size);
-    std::uniform_int_distribution<uint32_t> req_size_distribution(1, max_req_size);
-    std::uniform_int_distribution<int32_t> elements_distribution(-1'000'000, 1'000'000);
-    std::uniform_int_distribution<uint32_t> size_threshold_distribution(3, 10);
-
-    for (uint32_t i = 0; i < TESTS_COUNT / BATCH_REQUESTS_PER_TEST; ++i)
-    {
-        uint32_t cur_tree_size = tree_size_distribution(generator);
-        uint32_t cur_size_threshold = size_threshold_distribution(generator);
-
-        auto [keys_set, keys] = get_build_batch<int32_t>(cur_tree_size, generator, elements_distribution);
-        ist_internal<int32_t> tree(keys, cur_size_threshold);
-
-        for (uint32_t j = 0; j < BATCH_REQUESTS_PER_TEST; ++j)
+        for (uint32_t j = 0; j < REQ_PER_TEST; ++j)
         {
             uint32_t cur_insert_size = req_size_distribution(generator);
             auto [exp_insert_res, insert_keys] = get_insert_batch<int32_t>(
@@ -225,6 +147,11 @@ TEST(insert, multiple_insert_stress)
             for (uint64_t i = 0; i < insert_res.size(); ++i)
             {
                 ASSERT_EQ(exp_insert_res[i], insert_res[i]);
+            }
+
+            if (CHECK_SIZES)
+            {
+                tree.calc_tree_size();
             }
 
             uint32_t cur_contains_size = req_size_distribution(generator);
@@ -240,4 +167,64 @@ TEST(insert, multiple_insert_stress)
             }
         }
     }
+}
+
+TEST(insert, insert_empty_stress)
+{
+    uint32_t MAX_INITIAL_TREE_SIZE = 0;
+    uint32_t MAX_REQ_SIZE = 100'000;
+    uint32_t TESTS_COUNT = 200;
+    uint32_t REQ_PER_TEST = 1;
+    int32_t KEYS_FROM = -100'000;
+    int32_t KEYS_TO = 100'000;
+
+    do_test_insert_stress(
+        TESTS_COUNT, REQ_PER_TEST, MAX_INITIAL_TREE_SIZE, MAX_REQ_SIZE,
+        KEYS_FROM, KEYS_TO, false
+    );
+}
+
+TEST(insert, single_insert_non_empty_stress)
+{
+    uint32_t MAX_INITIAL_TREE_SIZE = 100'000;
+    uint32_t MAX_REQ_SIZE = 100'000;
+    uint32_t TESTS_COUNT = 200;
+    uint32_t REQ_PER_TEST = 1;
+    int32_t KEYS_FROM = -200'000;
+    int32_t KEYS_TO = 200'000;
+
+    do_test_insert_stress(
+        TESTS_COUNT, REQ_PER_TEST, MAX_INITIAL_TREE_SIZE, MAX_REQ_SIZE,
+        KEYS_FROM, KEYS_TO, false
+    );
+}
+
+TEST(insert, multiple_insert_stress)
+{
+    uint32_t MAX_INITIAL_TREE_SIZE = 100'000;
+    uint32_t MAX_REQ_SIZE = 100'000;
+    uint32_t TESTS_COUNT = 100;
+    uint32_t REQ_PER_TEST = 5;
+    int32_t KEYS_FROM = -1'000'000;
+    int32_t KEYS_TO = 1'000'000;
+
+    do_test_insert_stress(
+        TESTS_COUNT, REQ_PER_TEST, MAX_INITIAL_TREE_SIZE, MAX_REQ_SIZE,
+        KEYS_FROM, KEYS_TO, false
+    );
+}
+
+TEST(insert, insert_stress_check_sizes)
+{
+    uint32_t MAX_INITIAL_TREE_SIZE = 10'000;
+    uint32_t MAX_REQ_SIZE = 10'000;
+    uint32_t TESTS_COUNT = 10;
+    uint32_t REQ_PER_TEST = 3;
+    int32_t KEYS_FROM = -50'000;
+    int32_t KEYS_TO = 50'000;
+
+    do_test_insert_stress(
+        TESTS_COUNT, REQ_PER_TEST, MAX_INITIAL_TREE_SIZE, MAX_REQ_SIZE,
+        KEYS_FROM, KEYS_TO, true
+    );
 }

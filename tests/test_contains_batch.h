@@ -135,7 +135,7 @@ TEST(contains_batch, stress_size_check)
 {
     uint32_t MAX_TREE_SIZE = 10'000;
     uint32_t MAX_REQ_SIZE = 10'000;
-    uint32_t TESTS_COUNT = 50;
+    uint32_t TESTS_COUNT = 5;
     int32_t KEYS_FROM = -10'000;
     int32_t KEYS_TO = 10'000;
 
