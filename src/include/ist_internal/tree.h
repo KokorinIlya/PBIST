@@ -124,7 +124,10 @@ public:
         {
             return pasl::pctl::parray<bool>(raw_marker, keys.size(), false);
         }
-        pasl::pctl::parray<bool> result = this->contains(keys); // TODO: try non-batch contains
+        /*
+        TODO: try non-batch contains
+        */
+        pasl::pctl::parray<bool> result = this->contains(keys);
         assert(result.size() == keys.size());
 
         pasl::pctl::parray<T> remove_keys = pasl::pctl::filteri(

@@ -60,7 +60,7 @@ private:
     */
     using node_holder = std::vector<std::pair<T, bool>>; // <key, exists>
 
-    using level_holder = std::vector<std::pair<node_holder, bool>>; // <node,>
+    using level_holder = std::vector<std::pair<node_holder, bool>>; // <node, is_terminal>
 
     using keys_holder = std::vector<level_holder>;
 
@@ -203,19 +203,6 @@ private:
         }
     }
 
-    pasl::pctl::parray<uint64_t> get_borders() const
-    {
-        pasl::pctl::parray<uint64_t> sizes = get_sizes();
-        return pasl::pctl::scan(
-            sizes.begin(), sizes.end(), static_cast<uint64_t>(0),
-            [](uint64_t x, uint64_t y)
-            {
-                return x + y;
-            },
-            pasl::pctl::scan_type::forward_exclusive_scan
-        );
-    }
-
     uint64_t get_border_idx_by_key_idx(uint64_t key_idx) const
     {
         if (is_terminal())
@@ -296,9 +283,18 @@ private:
     {
         assert(0 <= left && left < right && right <= keys_holder.size());
 
-        pasl::pctl::parray<uint64_t> const& borders = get_borders();
-        assert(borders.size() > 0);
-        assert(borders.size() == keys.size() + children.size());
+        pasl::pctl::parray<uint64_t> sizes = get_sizes();
+        assert(sizes.size() == keys.size() + children.size());
+
+        pasl::pctl::parray<uint64_t> borders = pasl::pctl::scan(
+            sizes.begin(), sizes.end(), static_cast<uint64_t>(0),
+            [](uint64_t x, uint64_t y)
+            {
+                return x + y;
+            },
+            pasl::pctl::scan_type::forward_exclusive_scan
+        );
+        assert(borders.size() == sizes.size());
 
         if (is_terminal())
         {
@@ -306,6 +302,9 @@ private:
         }
         else
         {
+            /*
+            TODO: specify time complexity of both tasks
+            */
             pasl::pctl::granularity::fork2(
                 [this, &keys_holder, &borders, left, right]()
                 {

@@ -14,25 +14,9 @@ result.first:
     Index of the desired key in the keys array or index of the child subtree to continue search
 */
 template <typename T>
-std::pair<uint64_t, bool> binary_search(pasl::pctl::parray<std::pair<T, bool>> keys, T const& search_key)
+std::pair<uint64_t, bool> binary_search(pasl::pctl::parray<std::pair<T, bool>> const& keys, T const& search_key)
 {
     assert(keys.size() >= 1);
-    if (keys.size() == 1)
-    {
-        T const& the_only_key = keys[0].first;
-        if (search_key == the_only_key)
-        {
-            return {0, true};
-        }
-        else if (search_key < the_only_key)
-        {
-            return {0, false};
-        }
-        else
-        {
-            return {1, false};
-        }
-    }
 
     if (search_key == keys[0].first)
     {
@@ -42,7 +26,6 @@ std::pair<uint64_t, bool> binary_search(pasl::pctl::parray<std::pair<T, bool>> k
     {
         return {0, false};
     }
-
     if (search_key > keys[keys.size() - 1].first)
     {
         return {keys.size(), false};
