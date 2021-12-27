@@ -44,5 +44,5 @@ Parallel-Batched Interpolation Search Tree
 ## Benchmarking
 
 * Run from the project directory (`/home/ubuntu/PBIST`)
-* `CILK_NWORKERS=16 ././benchmarks/run_benchmarks.out ----benchmark_filter=.*` to run all benchmarks
+* `CILK_NWORKERS=16 ./benchmarks/run_benchmarks.out --benchmark_filter=.*` to run all benchmarks
 * Use `--benchmark_filter=bench_sum.*` e.g. to specify benchmarks to run

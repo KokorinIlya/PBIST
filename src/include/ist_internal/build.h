@@ -11,6 +11,7 @@
 #include <functional>
 #include <iostream>
 #include <string>
+#include "utils.h"
 
 template <typename T>
 struct ist_internal_node;
@@ -90,5 +91,6 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
 template <typename T>
 std::unique_ptr<ist_internal_node<T>> build_from_keys(pasl::pctl::parray<T> const& keys, uint64_t size_threshold)
 {
+    assert(is_sorted(keys, true));
     return do_build_from_keys(keys, 0, keys.size(), size_threshold);
 }
