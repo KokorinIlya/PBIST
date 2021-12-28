@@ -9,7 +9,7 @@
 
 static void bench_tree_build(benchmark::State& state) 
 {
-    //assert(false);
+    assert(false);
     
     uint64_t size = state.range(0);
     int32_t keys_from = state.range(1);
@@ -21,13 +21,19 @@ static void bench_tree_build(benchmark::State& state)
 
     for (auto _ : state) 
     {
-        state.PauseTiming();
+        //state.PauseTiming();
         pasl::pctl::parray<int32_t> keys = get_batch(size, generator, elements_distribution);
-        state.ResumeTiming();
+        //state.ResumeTiming();
+
+        auto start = std::chrono::high_resolution_clock::now();
 
         auto result = build_from_keys(keys, size_threshold);
         benchmark::DoNotOptimize(result);
         benchmark::ClobberMemory();
+
+        auto end = std::chrono::high_resolution_clock::now();
+        auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+        state.SetIterationTime(elapsed_seconds.count());
     }
 }
 
@@ -35,4 +41,5 @@ BENCHMARK(bench_tree_build)
     ->Args({10'000'000, -1'000'000'000, 1'000'000'000})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(5)
-    ->UseRealTime();
+    ->Iterations(2)
+    ->UseManualTime();

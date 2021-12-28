@@ -34,20 +34,14 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
     if (keys_count <= size_threshold)
     {
         pasl::pctl::parray<std::pair<T, bool>> reps(
-            keys_count,
-            [left, &keys](long rep_idx) 
+            raw_marker, keys_count,
+            [left, &keys](uint64_t rep_idx) 
             {
                 uint64_t key_idx = static_cast<uint64_t>(rep_idx + left);
                 return std::make_pair(keys[key_idx], true);
             }
         );
-        pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> children(
-            raw_marker, 0,
-            [](long)
-            {
-                return nullptr;
-            }
-        );
+        pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> children(raw_marker, 0);
 
         return std::make_unique<ist_internal_node<T>>(std::move(reps), std::move(children), keys_count);
     }

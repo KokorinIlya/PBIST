@@ -11,7 +11,7 @@ include_directories(./chunkedseq/include)
 
 include_directories(./src/include)
 
-add_compile_options(-g -fcilkplus -DUSE_CILK_PLUS_RUNTIME -std=c++17)
+add_compile_options(-fcilkplus -DUSE_CILK_PLUS_RUNTIME -std=c++17)
 
 add_subdirectory(tests)
 add_subdirectory(benchmarks)
