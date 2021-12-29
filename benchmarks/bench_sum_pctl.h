@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <chrono>
 #include <iostream>
+#include <cassert>
 
 static void bench_sum_pctl(benchmark::State& state) 
 {

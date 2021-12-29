@@ -6,6 +6,7 @@
 #include "ist_internal/node.h"
 #include <cstdint>
 #include "utils.h"
+#include <cassert>
 
 static void bench_tree_build(benchmark::State& state) 
 {

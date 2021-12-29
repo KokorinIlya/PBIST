@@ -13,5 +13,8 @@ include_directories(./src/include)
 
 add_compile_options(-fcilkplus -DUSE_CILK_PLUS_RUNTIME -std=c++17)
 
+add_executable(bench_build.out benchmarks/bench_build_manual.cpp)
+target_link_libraries(bench_build.out pthread cilkrts)
+
 add_subdirectory(tests)
 add_subdirectory(benchmarks)

@@ -19,6 +19,41 @@ struct ist_internal_node;
 template <typename T>
 std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
     pasl::pctl::parray<T> const& keys, 
+    uint64_t left, uint64_t right, uint64_t size_threshold);
+
+template <typename T>
+void do_build_single_cell(
+    pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>>& children,
+    pasl::pctl::parray<std::pair<T, bool>>& reps,
+    pasl::pctl::parray<T> const& keys,
+    uint64_t block_size, uint64_t rep_size, uint64_t size_threshold, 
+    uint64_t left, uint64_t right, uint64_t child_idx)
+{
+    if (child_idx < rep_size)
+    {
+        uint64_t start_idx = left + child_idx * (block_size + 1);
+        uint64_t end_idx = start_idx + block_size;
+
+        T const& cur_rep = keys[end_idx];
+        new (&reps[child_idx]) std::pair<T, bool>(cur_rep, true);
+        new (&children[child_idx]) std::unique_ptr<ist_internal_node<T>>(
+            do_build_from_keys(keys, start_idx, end_idx, size_threshold)
+        );
+    }
+    else
+    {
+        assert(child_idx == rep_size);
+        uint64_t start_idx = left + child_idx * (block_size + 1);
+        uint64_t end_idx = right;
+        new (&children[child_idx]) std::unique_ptr<ist_internal_node<T>>(
+            do_build_from_keys(keys, start_idx, end_idx, size_threshold)
+        );
+    }
+}
+
+template <typename T>
+std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
+    pasl::pctl::parray<T> const& keys, 
     uint64_t left, uint64_t right, uint64_t size_threshold)
 {
     pasl::pctl::raw raw_marker;
@@ -53,28 +88,47 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
     pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> children(raw_marker, rep_size + 1);
 
     // TODO: loop body is not constant, use Comp-based pfor
-    pasl::pctl::parallel_for(
+    pasl::pctl::range::parallel_for(
         static_cast<uint64_t>(0), static_cast<uint64_t>(rep_size + 1),
-        [block_size, size_threshold, left, right, rep_size, &reps, &children, &keys] (uint64_t child_idx)
+        [left, right, block_size, rep_size] (uint64_t left_idx, uint64_t right_idx)
         {
-            if (child_idx < rep_size)
-            {
-                uint64_t start_idx = left + child_idx * (block_size + 1);
-                uint64_t end_idx = start_idx + block_size;
+            assert(0 <= left_idx && left_idx < right_idx && right_idx <= rep_size + 1);
 
-                T const& cur_rep = keys[end_idx];
-                new (&reps[child_idx]) std::pair<T, bool>(cur_rep, true);
-                new (&children[child_idx]) std::unique_ptr<ist_internal_node<T>>(
-                    do_build_from_keys(keys, start_idx, end_idx, size_threshold)
-                );
+            uint64_t start_idx = left + left_idx * (block_size + 1);
+
+            if (right_idx < rep_size + 1)
+            {
+                /*
+                start_idx = left + left_idx  * (block_size + 1);
+                end_idx   = left + right_idx * (block_size + 1);
+                */
+                return (block_size + 1) * (right_idx - left_idx);
             }
             else
             {
-                assert(child_idx == rep_size);
-                uint64_t start_idx = left + child_idx * (block_size + 1);
-                uint64_t end_idx = right;
-                new (&children[child_idx]) std::unique_ptr<ist_internal_node<T>>(
-                    do_build_from_keys(keys, start_idx, end_idx, size_threshold)
+                assert(right_idx == rep_size + 1);
+                uint64_t start_idx = left + left_idx * (block_size + 1);
+                return right - start_idx;
+            }
+        },
+        [&children, &reps, &keys, block_size, rep_size, size_threshold, left, right] (uint64_t child_idx)
+        {
+            do_build_single_cell(
+                children, reps, keys, block_size, rep_size, 
+                size_threshold, left, right, child_idx
+            );
+        },
+        [
+            &children, &reps, &keys, 
+            block_size, rep_size, size_threshold, left, right
+        ](uint64_t left_idx, uint64_t right_idx)
+        {
+            assert(0 <= left_idx && left_idx < right_idx && right_idx <= rep_size + 1);
+            for (uint64_t child_idx = left_idx; child_idx < right_idx; ++child_idx)
+            {
+                do_build_single_cell(
+                    children, reps, keys, block_size, rep_size, 
+                    size_threshold, left, right, child_idx
                 );
             }
         }

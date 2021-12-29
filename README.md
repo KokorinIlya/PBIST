@@ -34,6 +34,8 @@ Parallel-Batched Interpolation Search Tree
 * Run from the project directory (`/home/ubuntu/PBIST`)
 * `CC=bin/clang CXX=bin/clang++ cmake .`
 * `make`
+* Use `CC=bin/clang CXX=bin/clang++ cmake -DCMAKE_BUILD_TYPE=Debug .` to build in debug mode (for testing)
+* Or `CC=bin/clang CXX=bin/clang++ cmake -DCMAKE_BUILD_TYPE=Release .` to build in release mode (for benchmarking)
 
 ## Testing
 
