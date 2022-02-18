@@ -36,19 +36,19 @@ Parallel-Batched Interpolation Search Tree
 ## Compiling
 
 * Run from the project directory (`/home/ubuntu/PBIST`)
-* `CC=bin/clang CXX=bin/clang++ cmake .`
-* `make`
-* Use `CC=bin/clang CXX=bin/clang++ cmake -DCMAKE_BUILD_TYPE=Debug .` to build in debug mode (for testing)
-* Or `CC=bin/clang CXX=bin/clang++ cmake -DCMAKE_BUILD_TYPE=Release .` to build in release mode (for benchmarking)
+* `chmod +x build_debug.sh` 
+* `chmod +x build_release.sh` 
+* Use `./build_debug.sh` to build in debug mode (for testing)
+* Use `./build_release.sh` to build in release mode (for benchmarking)
 
 ## Testing
 
 * Run from the project directory (`/home/ubuntu/PBIST`)
-* `CILK_NWORKERS=16 ./tests/run_tests.out --gtest_filter=*` to run all tests
+* `CILK_NWORKERS=16 ./build-debug/tests/run_tests.out --gtest_filter=*` to run all tests
 * Use `--gtest_filter=insert*` e.g. to specify tests to run
 
 ## Benchmarking
 
 * Run from the project directory (`/home/ubuntu/PBIST`)
-* `CILK_NWORKERS=16 ./benchmarks/run_benchmarks.out --benchmark_filter=.*` to run all benchmarks
+* `CILK_NWORKERS=16 ./build-release/benchmarks/run_benchmarks.out --benchmark_filter=.*` to run all benchmarks
 * Use `--benchmark_filter=bench_sum.*` e.g. to specify benchmarks to run
