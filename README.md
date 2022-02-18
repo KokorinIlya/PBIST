@@ -7,20 +7,20 @@ Parallel-Batched Interpolation Search Tree
 * `sudo apt install g++`
 
 ## Cloning the repository
-* Run from the home directory (`/home/ubuntu`)
+* Run from the base directory (`/home/ubuntu`)
 * `git clone git@github.com:KokorinIlya/PBIST.git`
 
 ## Installing OpenCilk
 
-* Run from the home directory (`/home/ubuntu/`)
+* Run from the base directory (`/home/ubuntu/`)
 * `git clone -b opencilk/v1.0 https://github.com/OpenCilk/infrastructure`
 * `infrastructure/tools/get $(pwd)/opencilk`
 * `infrastructure/tools/build $(pwd)/opencilk $(pwd)/build`
-* `cd $(pwd)/build`
-* `cmake -DCMAKE_INSTALL_PREFIX=/home/ubuntu/PBIST -P cmake_install.cmake`
+* `cd build`
+* `cmake -DCMAKE_INSTALL_PREFIX=$(pwd)/../PBIST -P cmake_install.cmake`
 
 ## Installing PCTL
-* Run from the home directory (`/home/ubuntu`)
+* Run from the base directory (`/home/ubuntu`)
 * `wget https://raw.githubusercontent.com/deepsea-inria/pctl/master/script/get.sh`
 * `chmod +x ./get.sh`
 * `./get.sh $(pwd)/PBIST`
@@ -28,6 +28,10 @@ Parallel-Batched Interpolation Search Tree
 ## Installing Google Tests
 * Run from the project directory (`/home/ubuntu/PBIST`)
 * `git clone https://github.com/google/googletest.git tests/lib`
+
+## Installing Google Benchmarks
+* Run from the project directory (`/home/ubuntu/PBIST`)
+* `git clone https://github.com/google/benchmark.git benchmarks/lib`
 
 ## Compiling
 
