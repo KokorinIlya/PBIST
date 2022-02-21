@@ -7,5 +7,4 @@ link_directories(lib/src)
 add_executable(run_benchmarks.out 
     all_benchmarks.cpp
 )
-add_link_options(-fopencilk)
 target_link_libraries(run_benchmarks.out pthread benchmark_main)

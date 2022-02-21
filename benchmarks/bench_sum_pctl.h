@@ -9,10 +9,29 @@
 #include <chrono>
 #include <iostream>
 #include <cassert>
+#include <hwloc.h>
 
 static void bench_sum_pctl(benchmark::State& state) 
 {
     assert(false);
+
+/*-----------------------------------------
+    hwloc_topology_t    topology;
+    hwloc_topology_init (&topology);
+    hwloc_topology_load (topology);
+    bool numa_alloc_interleaved = true;//(proc == 1) ? false : true;
+//    numa_alloc_interleaved =
+//      deepsea::cmdline::parse_or_default_bool("numa_alloc_interleaved", numa_alloc_interleaved, false);
+    int cpus = hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_CORE);
+    std::cout << "Number of CPUs: " << cpus << "\n";
+    if (numa_alloc_interleaved) {
+      hwloc_cpuset_t all_cpus =
+        hwloc_bitmap_dup (hwloc_topology_get_topology_cpuset (topology));
+      int err = hwloc_set_membind(topology, all_cpus, HWLOC_MEMBIND_INTERLEAVE, 0);
+      if (err < 0)
+        printf("Warning: failed to set NUMA round-robin allocation policy\n");
+    }
+-----------------------------------------*/
     
     uint64_t size = state.range(0);
     int64_t keys_from = state.range(1);
@@ -24,13 +43,11 @@ static void bench_sum_pctl(benchmark::State& state)
     for (auto _ : state) 
     {
         //state.PauseTiming();
-        pasl::pctl::parray<int64_t> arr(
-            size, 
-            [&elements_distribution, &generator](uint64_t) 
-            { 
-                return elements_distribution(generator);
-            }
-        );
+        pasl::pctl::parray<int64_t> arr(pasl::pctl::raw{}, size);
+        for (int i = 0; i < size; i++) 
+        {
+            arr[i] = elements_distribution(generator);
+        }
         //state.ResumeTiming();
 
         auto start = std::chrono::high_resolution_clock::now();
@@ -48,6 +65,6 @@ static void bench_sum_pctl(benchmark::State& state)
 BENCHMARK(bench_sum_pctl)
     ->Args({1'000'000'000, -1'000'000, 1'000'000})
     ->Unit(benchmark::kMillisecond)
-    ->Repetitions(5)
-    ->Iterations(2)
+    ->Repetitions(1)
+    ->Iterations(1)
     ->UseManualTime();
