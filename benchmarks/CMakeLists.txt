@@ -8,3 +8,6 @@ add_executable(run_benchmarks.out
     all_benchmarks.cpp
 )
 target_link_libraries(run_benchmarks.out pthread benchmark_main)
+
+add_executable(bench_sum_ng.out bench_sum_ng.cpp)
+target_link_libraries(bench_sum_ng.out pthread)
