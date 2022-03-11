@@ -56,8 +56,9 @@ Parallel-Batched Interpolation Search Tree
 ## Using tcmalloc
 * Run from the project directory (`/home/ubuntu/PBIST`)
 * `git clone https://github.com/google/tcmalloc.git`
-* `vim tcmalloc/tcmalloc/BUILD`
+* `cd tcmalloc`
 * `bazel test //tcmalloc/...`
+* `vim tcmalloc/BUILD`
 * Copy and paste the following text to the end of the file
 ```
 # This library provides standard tcmalloc as a shared (loadable) library.
@@ -80,6 +81,7 @@ cc_binary(
 )
 ```
 * `bazel build //tcmalloc:libtcmalloc.so`
+* `cd ..`
 * Set `LD_PRELOAD="tcmalloc/bazel-bin/tcmalloc/libtcmalloc.so"` before executing commands 
   * e.g. `LD_PRELOAD="tcmalloc/bazel-bin/tcmalloc/libtcmalloc.so" CILK_NWORKERS=16 ./build-release/benchmarks/run_benchmarks.out`
 
