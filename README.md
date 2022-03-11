@@ -52,3 +52,33 @@ Parallel-Batched Interpolation Search Tree
 * Run from the project directory (`/home/ubuntu/PBIST`)
 * `CILK_NWORKERS=16 ./build-release/benchmarks/run_benchmarks.out --benchmark_filter=.*` to run all benchmarks
 * Use `--benchmark_filter=bench_sum.*` e.g. to specify benchmarks to run
+
+## Using tcmalloc
+* Run from the project directory (`/home/ubuntu/PBIST`)
+* `git clone https://github.com/google/tcmalloc.git`
+* `vim tcmalloc/tcmalloc/BUILD`
+* `bazel test //tcmalloc/...`
+* Copy and paste the following text to the end of the file
+```
+# This library provides standard tcmalloc as a shared (loadable) library.
+cc_binary(
+    name = "libtcmalloc.so",
+    srcs = [
+        "libc_override.h",
+        "libc_override_gcc_and_weak.h",
+        "libc_override_glibc.h",
+        "sampler.h",
+        "tcmalloc.cc",
+        "tcmalloc.h",
+    ],
+    copts = TCMALLOC_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = tcmalloc_deps + [
+        ":common",
+    ],
+    linkshared = True,
+)
+```
+* `bazel build //tcmalloc:libtcmalloc.so`
+* Set `LD_PRELOAD="tcmalloc/bazel-bin/tcmalloc/libtcmalloc.so"` before executing commands e.g. `LD_PRELOAD="tcmalloc/bazel-bin/tcmalloc/libtcmalloc.so" CILK_NWORKERS=16 ./build-release/benchmarks/run_benchmarks.out --benchmark_filter=bench_tree_build.`
+
