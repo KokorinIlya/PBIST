@@ -12,3 +12,4 @@ pctl/
 share/
 *.out
 .vscode
+tcmalloc

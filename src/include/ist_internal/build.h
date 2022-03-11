@@ -87,14 +87,11 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
     pasl::pctl::parray<std::pair<T, bool>> reps(raw_marker, rep_size);
     pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> children(raw_marker, rep_size + 1);
 
-    // TODO: loop body is not constant, use Comp-based pfor
     pasl::pctl::range::parallel_for(
         static_cast<uint64_t>(0), static_cast<uint64_t>(rep_size + 1),
         [left, right, block_size, rep_size] (uint64_t left_idx, uint64_t right_idx)
         {
             assert(0 <= left_idx && left_idx < right_idx && right_idx <= rep_size + 1);
-
-            uint64_t start_idx = left + left_idx * (block_size + 1);
 
             if (right_idx < rep_size + 1)
             {
