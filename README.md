@@ -80,7 +80,8 @@ cc_binary(
 )
 ```
 * `bazel build //tcmalloc:libtcmalloc.so`
-* Set `LD_PRELOAD="tcmalloc/bazel-bin/tcmalloc/libtcmalloc.so"` before executing commands e.g. `LD_PRELOAD="tcmalloc/bazel-bin/tcmalloc/libtcmalloc.so" CILK_NWORKERS=16 ./build-release/benchmarks/run_benchmarks.out`
+* Set `LD_PRELOAD="tcmalloc/bazel-bin/tcmalloc/libtcmalloc.so"` before executing commands 
+  * e.g. `LD_PRELOAD="tcmalloc/bazel-bin/tcmalloc/libtcmalloc.so" CILK_NWORKERS=16 ./build-release/benchmarks/run_benchmarks.out`
 
 ## Controlling threads affinity
 * Use `CILK_NWORKERS=N taskset 0xFFFF numactl --interleave=all command` to execute `command` on cores [0-15], while allocating memory on any NUMA node
