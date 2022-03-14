@@ -51,7 +51,7 @@ Parallel-Batched Interpolation Search Tree
 
 * Run from the project directory (`/home/ubuntu/PBIST`)
 * `CILK_NWORKERS=16 ./build-release/benchmarks/run_benchmarks.out --benchmark_filter=.*` to run all benchmarks
-* Use `--benchmark_filter=bench_tree_build.*` e.g. to specify benchmarks to run
+* Use `--benchmark_filter=bench_build.*` e.g. to specify benchmarks to run
 
 ## Using tcmalloc
 * Run from the project directory (`/home/ubuntu/PBIST`)
