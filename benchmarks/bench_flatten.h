@@ -8,7 +8,7 @@
 #include "utils.h"
 #include <cassert>
 
-static void bench_build(benchmark::State& state) 
+static void bench_flatten_full(benchmark::State& state) 
 {
     assert(false);
     
@@ -24,11 +24,12 @@ static void bench_build(benchmark::State& state)
     {
         //state.PauseTiming();
         pasl::pctl::parray<int32_t> keys = get_batch(size, generator, elements_distribution);
+        auto tree = build_from_keys(keys, size_threshold);
         //state.ResumeTiming();
 
         auto start = std::chrono::high_resolution_clock::now();
 
-        auto result = build_from_keys(keys, size_threshold);
+        pasl::pctl::parray<int32_t> result = tree->get_keys();
         benchmark::DoNotOptimize(result);
         benchmark::ClobberMemory();
 
@@ -38,7 +39,7 @@ static void bench_build(benchmark::State& state)
     }
 }
 
-BENCHMARK(bench_build)
+BENCHMARK(bench_flatten_full)
     ->Args({10'000'000, -1'000'000'000, 1'000'000'000})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(1)
