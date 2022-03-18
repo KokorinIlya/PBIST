@@ -8,7 +8,6 @@
 #include <cassert>
 #include <utility>
 #include <memory>
-#include <functional>
 #include <iostream>
 #include <string>
 #include "utils.h"
