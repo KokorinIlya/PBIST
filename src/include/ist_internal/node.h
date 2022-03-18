@@ -21,6 +21,7 @@ struct ist_internal_node
 {
 private:
     // representative keys: consists of pairs {key, exists}
+    // TODO: move keys and exists to separate arrays to make search faster
     pasl::pctl::parray<std::pair<T, bool>> keys;
     // children.size() == 0 || children.size() == keys.size() + 1
     pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> children;

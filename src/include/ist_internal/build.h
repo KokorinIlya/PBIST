@@ -141,12 +141,14 @@ std::unique_ptr<ist_internal_node<T>> build_from_keys(pasl::pctl::parray<T> cons
 }
 
 template <typename T>
-pasl::pctl::parray<uint64_t> build_id(pasl::pctl::parray<T> const& keys, uint64_t id_size)
+pasl::pctl::parray<uint64_t> build_id(
+    pasl::pctl::parray<std::pair<T, bool>> const& keys,
+    uint64_t id_size)
 {
     assert(keys.size() >= 1);
 
-    double min = static_cast<double>(keys[0]);
-    double max = static_cast<double>(keys[keys.size() - 1]);
+    double min = static_cast<double>(keys[0].first);
+    double max = static_cast<double>(keys[keys.size() - 1].first);
     double range = max - min;
 
     return pasl::pctl::parray<uint64_t>(
@@ -154,7 +156,14 @@ pasl::pctl::parray<uint64_t> build_id(pasl::pctl::parray<T> const& keys, uint64_
         [&keys, min, range, id_size](uint64_t i)
         {
             double frac = min + range * static_cast<double>(i) / static_cast<double>(id_size);
-            typename pasl::pctl::parray<T>::iterator it = std::lower_bound(keys.begin(), keys.end(), frac);
+            typename pasl::pctl::parray<std::pair<T, bool>>::iterator it = std::lower_bound(
+                keys.begin(), keys.end(), frac,
+                [frac](std::pair<T, bool> const& cur_key, double value)
+                {
+                    assert(value == frac);
+                    return cur_key.first < value;
+                }
+            );
             assert(it != keys.end());
             return it - keys.begin();
         }

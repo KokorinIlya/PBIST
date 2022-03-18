@@ -4,10 +4,13 @@
 #include "ist_internal/build.h"
 #include <cstdint>
 #include <iostream>
+#include <utility>
 
 TEST(id_building, simple)
 {
-    pasl::pctl::parray<uint64_t> keys = {1, 2, 5, 7, 9, 11, 14, 32, 64};
+    pasl::pctl::parray<std::pair<uint64_t, bool>> keys = {
+        {1, true}, {2, true}, {5, true}, {7, true}, {9, true}, {11, true}, {14, true}, {32, true}, {64, true}
+    };
     pasl::pctl::parray<uint64_t> id = build_id(keys, keys.size());
     pasl::pctl::parray<uint64_t> exp_id = {0, 4, 7, 7, 7, 8, 8, 8, 8};
     ASSERT_EQ(exp_id.size(), id.size());
@@ -32,11 +35,18 @@ TEST(id_building, stress)
     {
         uint32_t cur_keys_size = size_distribution(generator);
         uint32_t cur_id_size = size_distribution(generator);
-        pasl::pctl::parray<int32_t> keys = 
+        pasl::pctl::parray<int32_t> ks = 
             get_build_batch<int32_t>(cur_keys_size, generator, elements_distribution).second;
+        pasl::pctl::parray<std::pair<int32_t, bool>> keys(
+            pasl::pctl::raw{}, ks.size(),
+            [&ks](uint64_t j) -> std::pair<int32_t, bool>
+            {
+                return {ks[j], true};
+            }
+        );
 
-        double min = static_cast<double>(keys[0]);
-        double max = static_cast<double>(keys[keys.size() - 1]);
+        double min = static_cast<double>(keys[0].first);
+        double max = static_cast<double>(keys[keys.size() - 1].first);
         double range = max - min;
 
         pasl::pctl::parray<uint64_t> id = build_id(keys, cur_id_size);
@@ -44,19 +54,19 @@ TEST(id_building, stress)
 
         for (uint32_t j = 0; j < cur_id_size; ++j)
         {
-            double frac = min + range * static_cast<double>(i) / static_cast<double>(cur_id_size);
+            double frac = min + range * static_cast<double>(j) / static_cast<double>(cur_id_size);
 
             uint32_t result = 200'000;
             for (uint32_t k = 0; k < keys.size(); ++k)
             {
-                if (frac <= keys[k])
+                if (frac <= keys[k].first)
                 {
                     result = k;
                     break;
                 }
             }
             ASSERT_TRUE(result < keys.size());
-            ASSERT_EQ(result, id[i]);
+            ASSERT_EQ(result, id[j]);
         }
     }
 }
