@@ -6,3 +6,4 @@
 #include "test_insert.h"
 #include "test_remove.h"
 #include "stress_test.h"
+#include "test_id_building.h"

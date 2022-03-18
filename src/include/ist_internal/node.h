@@ -29,6 +29,10 @@ private:
     uint64_t cur_size;
     uint64_t modifications_count;
 
+    /*
+    Procedure has logarithmic span. 
+    However, should be used in asswertions only. 
+    */
     bool all_keys_exist()
     {
         pasl::pctl::parray< bool> exists(
@@ -48,15 +52,17 @@ private:
     }
 
     /*
-    Insert & delete utils
+    Insert & delete utils. 
+    Coefficient (4) can be adjusted
     */
    bool should_rebuild(uint64_t modifications_count) const
    {
-       return modifications_count + this->modifications_count > this->initial_size;
+       return 4 * (modifications_count + this->modifications_count) > this->initial_size;
    }
 
     /*
-    Level-by-level keys dumping
+    Level-by-level keys dumping.
+    Has linear span, for testing use only
     */
     using node_holder = std::vector<std::pair<T, bool>>; // <key, exists>
 
@@ -110,7 +116,8 @@ private:
     }
 
     /*
-    Sequential keys dumping
+    Sequential keys dumping.
+    Has linear span, for testing use only
     */
     void do_dump_keys_seq(std::vector<T>& res) const
     {
@@ -149,7 +156,7 @@ private:
     }
 
     /*
-    Parallel flattening
+    Parallel flattening.
     */
     pasl::pctl::parray<uint64_t> get_sizes() const
     {

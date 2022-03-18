@@ -12,6 +12,7 @@
 #include <iostream>
 #include <string>
 #include "utils.h"
+#include <algorithm>
 
 template <typename T>
 struct ist_internal_node;
@@ -138,4 +139,25 @@ std::unique_ptr<ist_internal_node<T>> build_from_keys(pasl::pctl::parray<T> cons
 {
     assert(is_sorted(keys, true));
     return do_build_from_keys(keys, 0, keys.size(), size_threshold);
+}
+
+template <typename T>
+pasl::pctl::parray<uint64_t> build_id(pasl::pctl::parray<T> const& keys, uint64_t id_size)
+{
+    assert(keys.size() >= 1);
+
+    double min = static_cast<double>(keys[0]);
+    double max = static_cast<double>(keys[keys.size() - 1]);
+    double range = max - min;
+
+    return pasl::pctl::parray<uint64_t>(
+        pasl::pctl::raw{}, id_size,
+        [&keys, min, range, id_size](uint64_t i)
+        {
+            double frac = min + range * static_cast<double>(i) / static_cast<double>(id_size);
+            typename pasl::pctl::parray<T>::iterator it = std::lower_bound(keys.begin(), keys.end(), frac);
+            assert(it != keys.end());
+            return it - keys.begin();
+        }
+    );
 }
