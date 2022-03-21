@@ -7,8 +7,7 @@
 
 template <typename T>
 std::pair<uint64_t, bool> do_binary_search(
-    pasl::pctl::parray<std::pair<T, bool>> const& keys, 
-    T const& search_key,
+    pasl::pctl::parray<T> const& keys, T const& search_key,
     uint64_t left_border, uint64_t right_border)
 {
     assert (0 <= left_border && left_border < right_border && right_border < keys.size());
@@ -17,11 +16,11 @@ std::pair<uint64_t, bool> do_binary_search(
 
     while (cur_left + 1 < cur_right)
     {
-        assert(search_key > keys[cur_left].first);
-        assert(search_key <= keys[cur_right].first);
+        assert(search_key > keys[cur_left]);
+        assert(search_key <= keys[cur_right]);
 
         uint64_t cur_mid = cur_left + ((cur_right - cur_left) >> 1);
-        if (search_key > keys[cur_mid].first)
+        if (search_key > keys[cur_mid])
         {
             cur_left = cur_mid;
         }
@@ -31,9 +30,9 @@ std::pair<uint64_t, bool> do_binary_search(
         }
     }
 
-    assert(search_key > keys[cur_left].first);
-    assert(search_key <= keys[cur_right].first);
-    if (search_key == keys[cur_right].first)
+    assert(search_key > keys[cur_left]);
+    assert(search_key <= keys[cur_right]);
+    if (search_key == keys[cur_right])
     {
         return {cur_right, true};
     }
@@ -52,20 +51,18 @@ result.first:
     Index of the desired key in the keys array or index of the child subtree to continue the search
 */
 template <typename T>
-std::pair<uint64_t, bool> binary_search(
-    pasl::pctl::parray<std::pair<T, bool>> const& keys, 
-    T const& search_key)
+std::pair<uint64_t, bool> binary_search(pasl::pctl::parray<T> const& keys, T const& search_key)
 {
     assert(keys.size() >= 1);
-    if (search_key == keys[0].first)
+    if (search_key == keys[0])
     {
         return {0, true};
     }
-    else if (search_key < keys[0].first)
+    else if (search_key < keys[0])
     {
         return {0, false};
     }
-    if (search_key > keys[keys.size() - 1].first)
+    if (search_key > keys[keys.size() - 1])
     {
         return {keys.size(), false};
     }
@@ -76,20 +73,19 @@ std::pair<uint64_t, bool> binary_search(
 
 template <typename T>
 std::pair<uint64_t, uint64_t> find_borders(
-    pasl::pctl::parray<std::pair<T, bool>> const& keys, 
-    T const& search_key,
+    pasl::pctl::parray<T> const& keys, T const& search_key,
     uint64_t initial_guess)
 {
     assert(0 <= initial_guess && initial_guess < keys.size());
     assert(keys.size() > 1);
 
-    if (keys[initial_guess].first < search_key)
+    if (keys[initial_guess] < search_key)
     {
         assert(initial_guess + 1 < keys.size());
         uint64_t left_border = initial_guess;
         uint64_t delta = 1;
 
-        while (initial_guess + delta < keys.size() && keys[initial_guess + delta].first < search_key)
+        while (initial_guess + delta < keys.size() && keys[initial_guess + delta] < search_key)
         {
             left_border = initial_guess + delta;
             delta <<= 1;
@@ -110,7 +106,7 @@ std::pair<uint64_t, uint64_t> find_borders(
         uint64_t right_border = initial_guess;
         uint64_t delta = 1;
 
-        while (initial_guess >= delta && keys[initial_guess - delta].first >= search_key)
+        while (initial_guess >= delta && keys[initial_guess - delta] >= search_key)
         {
             right_border = initial_guess - delta;
             delta <<= 1;
@@ -129,28 +125,26 @@ std::pair<uint64_t, uint64_t> find_borders(
 
 template <typename T>
 std::pair<uint64_t, bool> interpolation_search(
-    pasl::pctl::parray<std::pair<T, bool>> const& keys, 
-    T const& search_key,
+    pasl::pctl::parray<T> const& keys, T const& search_key,
     pasl::pctl::parray<uint64_t> const& id)
 {
-    //std::cout << "SEARCH " << search_key << std::endl;
     assert(keys.size() >= 1);
-    T const& min = keys[0].first;
-    T const& max = keys[keys.size() - 1].first;
+    T const& min = keys[0];
+    T const& max = keys[keys.size() - 1];
 
-    if (search_key == keys[0].first)
+    if (search_key == keys[0])
     {
         return {0, true};
     }
-    else if (search_key < keys[0].first)
+    else if (search_key < keys[0])
     {
         return {0, false};
     }
-    if (search_key > keys[keys.size() - 1].first)
+    if (search_key > keys[keys.size() - 1])
     {
         return {keys.size(), false};
     }
-    else if (search_key == keys[keys.size() - 1].first)
+    else if (search_key == keys[keys.size() - 1])
     {
         return {keys.size() - 1, true};
     }
@@ -161,7 +155,6 @@ std::pair<uint64_t, bool> interpolation_search(
     uint64_t id_idx = static_cast<uint64_t>(frac * id.size());
     assert(0 <= id_idx && id_idx < id.size());
     uint64_t initial_guess = id[id_idx];
-    //std::cout << "frac = " << frac << "; id_idx = " << id_idx << "; init_g = " << initial_guess << std::endl;
     
     auto [left_border, right_border] = find_borders(keys, search_key, initial_guess);
     return do_binary_search(keys, search_key, left_border, right_border);

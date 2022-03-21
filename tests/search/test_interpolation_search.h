@@ -8,12 +8,12 @@
 #include <gtest/gtest.h>
 #include <cstdint>
 #include <iostream>
-#include <unordered_set>
 #include "utils.h"
+#include "../test_utils.h"
 
 TEST(interpolation_search, single_key)
 {
-    pasl::pctl::parray<std::pair<int32_t, bool>> keys = {{1, true}};
+    pasl::pctl::parray<int32_t> keys = {1};
     pasl::pctl::parray<uint64_t> id = build_id(keys, 1);
 
     auto [idx_1, found_1] = interpolation_search(keys, -100, id);
@@ -31,9 +31,7 @@ TEST(interpolation_search, single_key)
 
 TEST(interpolation_search, multiple_keys)
 {
-    pasl::pctl::parray<std::pair<int32_t, bool>> keys = {
-        {1, true}, {4, true}, {7, true}, {9, true}, {10, true}, {11, true}, {15, true}
-    };
+    pasl::pctl::parray<int32_t> keys = {1, 4, 7, 9, 10, 11, 15};
     pasl::pctl::parray<uint64_t> id = build_id(keys, keys.size());
 
     auto [idx, found] = interpolation_search(keys, -100, id);
@@ -42,7 +40,7 @@ TEST(interpolation_search, multiple_keys)
 
     for (uint64_t i = 0; i < keys.size(); ++i)
     {
-        auto [cur_idx, cur_found] = interpolation_search(keys, keys[i].first, id);
+        auto [cur_idx, cur_found] = interpolation_search(keys, keys[i], id);
         ASSERT_EQ(i, cur_idx);
         ASSERT_TRUE(cur_found);
     }
@@ -85,32 +83,7 @@ TEST(interpolation_search, stress)
         uint32_t cur_size = size_distribution(generator);
         uint32_t id_size = size_distribution(generator);
 
-        // TODO: use get_batch here
-        std::vector<int32_t> keys_v;
-        std::unordered_set<int32_t> keys_set;
-        while (keys_v.size() < cur_size)
-        {
-            assert(keys_v.size() == keys_set.size());
-            int32_t cur_elem =  elements_distribution(generator);
-            if (keys_set.find(cur_elem) != keys_set.end())
-            {
-                continue;
-            }
-            auto insert_res = keys_set.insert(cur_elem);
-            assert(insert_res.second);
-            keys_v.push_back(cur_elem);
-        }
-        assert(keys_v.size() == keys_set.size());
-
-        std::sort(keys_v.begin(), keys_v.end());
-        pasl::pctl::parray<std::pair<int32_t, bool>> keys(
-            keys_v.size(),
-            [&keys_v](long i) -> std::pair<int32_t, bool>
-            {
-                return {keys_v[i], true};
-            }
-        );
-
+        auto [keys_set, keys] = get_batch(cur_size, generator, elements_distribution);
         pasl::pctl::parray<uint64_t> id = build_id(keys, id_size);
 
         for (uint32_t j = 0; j < REQUESTS_PER_TEST; ++j)
@@ -120,21 +93,21 @@ TEST(interpolation_search, stress)
             ASSERT_EQ(keys_set.find(cur_req) != keys_set.end(), found);
             if (found)
             {
-                ASSERT_EQ(cur_req, keys[idx].first);
+                ASSERT_EQ(cur_req, keys[idx]);
             }
             else
             {
                 if (idx == keys.size())
                 {
-                    ASSERT_TRUE(cur_req > keys[keys.size() - 1].first);
+                    ASSERT_TRUE(cur_req > keys[keys.size() - 1]);
                 }
                 else if (idx == 0)
                 {
-                    ASSERT_TRUE(cur_req < keys[0].first);
+                    ASSERT_TRUE(cur_req < keys[0]);
                 }
                 else
                 {
-                    ASSERT_TRUE(keys[idx - 1].first < cur_req && cur_req < keys[idx].first);
+                    ASSERT_TRUE(keys[idx - 1] < cur_req && cur_req < keys[idx]);
                 }
             }
         }

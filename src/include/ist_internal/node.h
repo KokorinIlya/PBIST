@@ -20,9 +20,10 @@ template <typename T>
 struct ist_internal_node
 {
 private:
-    // representative keys: consists of pairs {key, exists}
-    // TODO: move keys and exists to separate arrays to make search faster
-    pasl::pctl::parray<std::pair<T, bool>> keys;
+    // representative keys
+    pasl::pctl::parray<T> keys;
+    // keys_exist.size() == keys.size()
+    pasl::pctl::parray<bool> keys_exist;
     // children.size() == 0 || children.size() == keys.size() + 1
     pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> children;
 
@@ -30,26 +31,18 @@ private:
     uint64_t cur_size;
     uint64_t modifications_count;
 
+
     /*
-    Procedure has logarithmic span. 
-    However, should be used in asswertions only. 
+    Structure checking for assertions
     */
-    bool all_keys_exist()
+    bool is_structure_correct() const
     {
-        pasl::pctl::parray< bool> exists(
-            this->keys.size(), 
-            [this] (uint64_t i)
-            {
-                return this->keys[i].second;
-            }
-        );
-        return pasl::pctl::reduce(
-            exists.begin(), exists.end(), true,
-            [](bool a, bool b)
-            {
-                return a && b;
-            }
-        );
+        return keys.size() == keys_exist.size() &&
+               keys.size() >= 1 &&
+               (
+                   children.size() == 0 ||
+                   children.size() == keys.size() + 1
+               );
     }
 
     /*
@@ -73,6 +66,8 @@ private:
 
     void do_dump_keys_by_level_seq(keys_holder& holder, uint64_t level) const
     {
+        assert(is_structure_correct());
+
         if (holder.size() < level + 1)
         {
             assert(holder.size() == level);
@@ -83,8 +78,7 @@ private:
         node_holder cur_node_holder;
         for (int64_t i = 0; i < keys.size(); ++i)
         {
-            auto [cur_key, key_exists] = keys[i];
-            cur_node_holder.push_back({cur_key, key_exists});
+            cur_node_holder.push_back({keys[i], keys_exist[i]});
         }
         holder[level].push_back({cur_node_holder, is_terminal()});
 
@@ -122,14 +116,16 @@ private:
     */
     void do_dump_keys_seq(std::vector<T>& res) const
     {
+        assert(is_structure_correct());
+
         if (is_terminal())
         {
+            assert(children.size() == 0);
             for (uint64_t i = 0; i < keys.size(); ++i)
             {
-                auto [cur_key, exists] = keys[i];
-                if (exists)
+                if (keys_exist[i])
                 {
-                    res.push_back(cur_key);
+                    res.push_back(keys[i]);
                 }
             }
             return;
@@ -143,10 +139,9 @@ private:
                 {
                     children[i]->do_dump_keys_seq(res);
                 }
-                auto [cur_key, exists] = keys[i];
-                if (exists)
+                if (keys_exist[i])
                 {
-                    res.push_back(cur_key);
+                    res.push_back(keys[i]);
                 }
             }
             if (children[children.size() - 1].get() != nullptr)
@@ -161,6 +156,8 @@ private:
     */
     pasl::pctl::parray<uint64_t> get_sizes() const
     {
+        assert(is_structure_correct());
+
         if (is_terminal())
         {
             assert(children.size() == 0);
@@ -168,14 +165,7 @@ private:
                 keys.size(),
                 [this](uint64_t idx)
                 {
-                    if (this->keys[idx].second)
-                    {
-                        return 1;
-                    }
-                    else
-                    {
-                        return 0;
-                    }
+                    return static_cast<uint64_t>(this->keys_exist[idx]);
                 }
             );
         }
@@ -198,13 +188,9 @@ private:
                             return static_cast<uint64_t>(0);
                         }
                     }
-                    else if (this->keys[i].second)
-                    {
-                        return static_cast<uint64_t>(1);
-                    }
                     else
                     {
-                        return static_cast<uint64_t>(0);
+                        return static_cast<uint64_t>(this->keys_exist[i]);
                     }
                 }
             );
@@ -213,6 +199,8 @@ private:
 
     uint64_t get_border_idx_by_key_idx(uint64_t key_idx) const
     {
+        assert(is_structure_correct());
+
         if (is_terminal())
         {
             return key_idx;
@@ -228,11 +216,12 @@ private:
         pasl::pctl::parray<uint64_t> const& borders,
         uint64_t left, uint64_t right) const
     {
+        assert(is_structure_correct());
+
         pasl::pctl::parallel_for(
             static_cast<uint64_t>(0), static_cast<uint64_t>(this->keys.size()),
             [this, &keys_holder, &borders, left, right](uint64_t key_idx)
             {
-                auto [cur_key, exists] = this->keys[key_idx];
                 uint64_t border_idx = this->get_border_idx_by_key_idx(key_idx);
                 assert(border_idx < borders.size());
                 uint64_t key_pos = left + borders[border_idx];
@@ -243,10 +232,10 @@ private:
                     next_key_pos = left + borders[border_idx + 1];
                 }
 
-                if (exists)
+                if (this->keys_exist[key_idx])
                 {
                     assert(next_key_pos == key_pos + 1);
-                    keys_holder[key_pos] = cur_key;
+                    keys_holder[key_pos] = this->keys[key_idx];
                 }
                 else
                 {
@@ -261,6 +250,8 @@ private:
         pasl::pctl::parray<uint64_t> const& borders,
         uint64_t left, uint64_t right) const
     {
+        assert(is_structure_correct());
+
         pasl::pctl::parallel_for(
             static_cast<uint64_t>(0), static_cast<uint64_t>(this->children.size()),
             [this, &keys_holder, &borders, left, right](uint64_t child_idx)
@@ -289,6 +280,7 @@ private:
 
     void do_get_keys(pasl::pctl::parray<T>& keys_holder, uint64_t left, uint64_t right) const
     {
+        assert(is_structure_correct());
         assert(0 <= left && left < right && right <= keys_holder.size());
 
         pasl::pctl::parray<uint64_t> sizes = get_sizes();
@@ -310,9 +302,8 @@ private:
         }
         else
         {
-            /*
-            TODO: specify time complexity of both tasks
-            */
+            assert(children.size() == keys.size() + 1);
+            // TODO: specify time complexity of both tasks
             pasl::pctl::granularity::fork2(
                 [this, &keys_holder, &borders, left, right]()
                 {
@@ -332,6 +323,8 @@ private:
     std::pair<pasl::pctl::parray<uint64_t>, pasl::pctl::parray<uint64_t>> get_range_borders(
         pasl::pctl::parray<int64_t> const& child_idx) const
     {
+        assert(is_structure_correct());
+
         pasl::pctl::raw raw_marker;
         pasl::pctl::parray<uint64_t> all_indexes(
             raw_marker, child_idx.size() + 1,
@@ -397,6 +390,8 @@ private:
        pasl::pctl::parray<T> const& arr, pasl::pctl::parray<bool>& result, 
        uint64_t left_border, uint64_t right_border) const
     {
+        assert(is_structure_correct());
+
         uint64_t range_size = right_border - left_border;
         pasl::pctl::raw raw_marker;
         pasl::pctl::parray<int64_t> child_idx(raw_marker, range_size);
@@ -409,8 +404,8 @@ private:
                 auto [search_idx, found] = binary_search(this->keys, arr[key_idx]);
                 if (found)
                 {
-                    assert(this->keys[search_idx].first == arr[key_idx]);
-                    result[key_idx] = this->keys[search_idx].second;
+                    assert(this->keys[search_idx] == arr[key_idx]);
+                    result[key_idx] = this->keys_exist[search_idx];
                     child_idx[key_idx - left_border] = -1;
                 }
                 else
@@ -471,20 +466,21 @@ private:
     */
     bool all_keys_not_exist(pasl::pctl::parray<T> const& keys, uint64_t left_border, uint64_t right_border) const
     {
-        pasl::pctl::parray<std::pair<T, bool>> const& this_keys = this->keys;
+        assert(is_structure_correct());
+
         pasl::pctl::parray< bool> not_exists(
             right_border - left_border, 
-            [left_border, &this_keys, &keys] (uint64_t i)
+            [this, left_border, &keys] (uint64_t i)
             {
-                auto [idx, found] = binary_search(this_keys, keys[left_border + i]);
+                auto [idx, found] = binary_search(this->keys, keys[left_border + i]);
                 assert(
                     !found || 
                     (
-                        0 <= idx && idx < this_keys.size() && 
-                        this_keys[idx].first == keys[left_border + i]
+                        0 <= idx && idx < this->keys.size() && 
+                        this->keys[idx] == keys[left_border + i]
                     )
                 );
-                return !found || !this_keys[idx].second;
+                return !found || !this->keys_exist[idx];
             }
         );
         return pasl::pctl::reduce(
@@ -500,6 +496,8 @@ private:
        pasl::pctl::parray<T> const& keys, uint64_t size_threshold, 
        uint64_t left_border, uint64_t right_border)
     {
+        assert(is_structure_correct());
+
         uint64_t range_size = right_border - left_border;
         pasl::pctl::raw raw_marker;
         pasl::pctl::parray<int64_t> child_idx(raw_marker, range_size);
@@ -515,10 +513,10 @@ private:
                 {
                     assert(
                         0 <= search_idx && search_idx < this->keys.size() &&
-                        this->keys[search_idx].first == keys[key_idx] &&
-                        !this->keys[search_idx].second
+                        this->keys[search_idx] == keys[key_idx] &&
+                        !this->keys_exist[search_idx]
                     );
-                    this->keys[search_idx].second = true;
+                    this->keys_exist[search_idx] = true;
                     child_idx[key_idx - left_border] = -1;
                 }
                 else
@@ -585,6 +583,8 @@ private:
        pasl::pctl::parray<T> const& keys, uint64_t size_threshold, 
        uint64_t left_border, uint64_t right_border)
     {
+        assert(is_structure_correct());
+
         uint64_t range_size = right_border - left_border;
         pasl::pctl::raw raw_marker;
         pasl::pctl::parray<int64_t> child_idx(raw_marker, range_size);
@@ -600,10 +600,10 @@ private:
                 {
                     assert(
                         0 <= search_idx && search_idx < this->keys.size() &&
-                        this->keys[search_idx].first == keys[key_idx] &&
-                        this->keys[search_idx].second
+                        this->keys[search_idx] == keys[key_idx] &&
+                        this->keys_exist[search_idx]
                     );
-                    this->keys[search_idx].second = false;
+                    this->keys_exist[search_idx] = false;
                     child_idx[key_idx - left_border] = -1;
                 }
                 else
@@ -659,10 +659,11 @@ public:
     friend struct ist_internal<T>;
 
     ist_internal_node(
-        pasl::pctl::parray<std::pair<T, bool>>&& _keys,
+        pasl::pctl::parray<T>&& _keys,
         pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>>&& _children,
         uint64_t keys_count
     ) : keys(std::move(_keys)), 
+        keys_exist(pasl::pctl::raw{}, keys.size(), true),
         //children(std::move(_children)),
         children(pasl::pctl::raw{}, 0),
         initial_size(keys_count),
@@ -675,11 +676,11 @@ public:
             children.size() == 0 || 
             children.size() == keys.size() + 1 && "Keys and children count doesn't match"
         );
-        assert(all_keys_exist() && "Non-existing key passed to the constructor");
     }
 
     bool is_terminal() const
     {
+        assert(is_structure_correct());
         return children.size() == 0;
     }
 
@@ -688,6 +689,7 @@ public:
     */
     std::vector<T> dump_keys_seq() const
     {
+        assert(is_structure_correct());
         std::vector<T> res;
         do_dump_keys_seq(res);
         return res;
@@ -698,6 +700,7 @@ public:
     */
     keys_holder dump_keys_by_level_seq() const
     {
+        assert(is_structure_correct());
         keys_holder holder;
         do_dump_keys_by_level_seq(holder, 0);
         return holder;
@@ -708,11 +711,13 @@ public:
     */
     uint64_t calc_node_size() const
     {
+        assert(is_structure_correct());
+        
         pasl::pctl::parray<uint64_t> keys_exist(
             this->keys.size(),
             [this](uint64_t idx)
             {
-                return static_cast<uint64_t>(this->keys[idx].second);
+                return static_cast<uint64_t>(this->keys_exist[idx]);
             }
         );
         uint64_t this_keys_count = pasl::pctl::reduce(
@@ -754,6 +759,7 @@ public:
     */
     pasl::pctl::parray<T> get_keys() const
     {
+        assert(is_structure_correct());
         if (cur_size == 0)
         {
             return pasl::pctl::parray<T>(0);
@@ -766,6 +772,7 @@ public:
     void do_contains(pasl::pctl::parray<T> const& arr, pasl::pctl::parray<bool>& result, 
                      uint64_t left_border, uint64_t right_border) const
     {
+        assert(is_structure_correct());
         assert(arr.size() == result.size());
         assert(0 <= left_border < right_border <= arr.size());
 
@@ -779,8 +786,8 @@ public:
                     auto [search_idx, found] = binary_search(this->keys, arr[key_idx]);
                     if (found)
                     {
-                        assert(this->keys[search_idx].first == arr[key_idx]);
-                        result[key_idx] = this->keys[search_idx].second;
+                        assert(this->keys[search_idx] == arr[key_idx]);
+                        result[key_idx] = this->keys_exist[search_idx];
                     }
                     else
                     {
@@ -799,7 +806,9 @@ public:
         pasl::pctl::parray<T> const& keys, uint64_t size_threshold,
         uint64_t left_border, uint64_t right_border)
     {
+        assert(is_structure_correct());
         assert(0 <= left_border < right_border <= keys.size());
+
         pasl::pctl::raw raw_marker;
         uint64_t new_keys_count = right_border - left_border;
 
@@ -836,7 +845,9 @@ public:
         pasl::pctl::parray<T> const& keys, uint64_t size_threshold,
         uint64_t left_border, uint64_t right_border)
     {
+        assert(is_structure_correct());
         assert(0 <= left_border < right_border <= keys.size());
+
         pasl::pctl::raw raw_marker;
         uint64_t keys_count = right_border - left_border;
         assert(this->cur_size >= keys_count);
@@ -852,10 +863,10 @@ public:
                     auto [idx, found] = binary_search(this->keys, keys[remove_key_idx]);
                     assert(
                         found && 0 <= idx && idx < this->keys.size() && 
-                        this->keys[idx].first == keys[remove_key_idx] && 
-                        this->keys[idx].second
+                        this->keys[idx] == keys[remove_key_idx] && 
+                        this->keys_exist[idx]
                     );
-                    this->keys[idx].second = false;
+                    this->keys_exist[idx] = false;
                 }
             );
         }

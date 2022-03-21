@@ -24,7 +24,7 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
 template <typename T>
 void do_build_single_cell(
     pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>>& children,
-    pasl::pctl::parray<std::pair<T, bool>>& reps,
+    pasl::pctl::parray<T>& reps,
     pasl::pctl::parray<T> const& keys,
     uint64_t block_size, uint64_t rep_size, uint64_t size_threshold, 
     uint64_t left, uint64_t right, uint64_t child_idx)
@@ -35,7 +35,7 @@ void do_build_single_cell(
         uint64_t end_idx = start_idx + block_size;
 
         T const& cur_rep = keys[end_idx];
-        new (&reps[child_idx]) std::pair<T, bool>(cur_rep, true);
+        new (&reps[child_idx]) T(cur_rep);
         new (&children[child_idx]) std::unique_ptr<ist_internal_node<T>>(
             do_build_from_keys(keys, start_idx, end_idx, size_threshold)
         );
@@ -68,12 +68,12 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
 
     if (keys_count <= size_threshold)
     {
-        pasl::pctl::parray<std::pair<T, bool>> reps(
+        pasl::pctl::parray<T> reps(
             raw_marker, keys_count,
             [left, &keys](uint64_t rep_idx) 
             {
                 uint64_t key_idx = static_cast<uint64_t>(rep_idx + left);
-                return std::make_pair(keys[key_idx], true);
+                return keys[key_idx];
             }
         );
         pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> children(raw_marker, 0);
@@ -84,7 +84,7 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
     uint64_t block_size = static_cast<uint64_t>(std::sqrt(keys_count));
     uint64_t rep_size = keys_count / (block_size + 1);
 
-    pasl::pctl::parray<std::pair<T, bool>> reps(raw_marker, rep_size);
+    pasl::pctl::parray<T> reps(raw_marker, rep_size);
     pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> children(raw_marker, rep_size + 1);
 
     pasl::pctl::range::parallel_for(
@@ -141,14 +141,12 @@ std::unique_ptr<ist_internal_node<T>> build_from_keys(pasl::pctl::parray<T> cons
 }
 
 template <typename T>
-pasl::pctl::parray<uint64_t> build_id(
-    pasl::pctl::parray<std::pair<T, bool>> const& keys,
-    uint64_t id_size)
+pasl::pctl::parray<uint64_t> build_id(pasl::pctl::parray<T> const& keys, uint64_t id_size)
 {
     assert(keys.size() >= 1);
 
-    double min = static_cast<double>(keys[0].first);
-    double max = static_cast<double>(keys[keys.size() - 1].first);
+    double min = static_cast<double>(keys[0]);
+    double max = static_cast<double>(keys[keys.size() - 1]);
     double range = max - min;
 
     return pasl::pctl::parray<uint64_t>(
@@ -156,14 +154,7 @@ pasl::pctl::parray<uint64_t> build_id(
         [&keys, min, range, id_size](uint64_t i)
         {
             double frac = min + range * static_cast<double>(i) / static_cast<double>(id_size);
-            typename pasl::pctl::parray<std::pair<T, bool>>::iterator it = std::lower_bound(
-                keys.begin(), keys.end(), frac,
-                [frac](std::pair<T, bool> const& cur_key, double value)
-                {
-                    assert(value == frac);
-                    return cur_key.first < value;
-                }
-            );
+            typename pasl::pctl::parray<T>::iterator it = std::lower_bound(keys.begin(), keys.end(), frac);
             assert(it != keys.end());
             return it - keys.begin();
         }
