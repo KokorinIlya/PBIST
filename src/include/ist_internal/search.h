@@ -106,7 +106,7 @@ std::pair<uint64_t, uint64_t> find_borders(
     }
     else
     {
-        assert(initial_guess > 1);
+        assert(initial_guess >= 1);
         uint64_t right_border = initial_guess;
         uint64_t delta = 1;
 
@@ -133,7 +133,7 @@ std::pair<uint64_t, bool> interpolation_search(
     T const& search_key,
     pasl::pctl::parray<uint64_t> const& id)
 {
-
+    //std::cout << "SEARCH " << search_key << std::endl;
     assert(keys.size() >= 1);
     T const& min = keys[0].first;
     T const& max = keys[keys.size() - 1].first;
@@ -150,18 +150,19 @@ std::pair<uint64_t, bool> interpolation_search(
     {
         return {keys.size(), false};
     }
-    /*else if (search_key == keys[keys.size() - 1].first)
+    else if (search_key == keys[keys.size() - 1].first)
     {
-        return {keys.size(), true};
+        return {keys.size() - 1, true};
     }
-    */
 
     assert(keys.size() > 1);
     double frac = (static_cast<double>(search_key) - min) / (max - min);
-    assert(0 < frac && frac <= 1);
+    assert(0 < frac && frac < 1);
     uint64_t id_idx = static_cast<uint64_t>(frac * id.size());
     assert(0 <= id_idx && id_idx < id.size());
     uint64_t initial_guess = id[id_idx];
+    //std::cout << "frac = " << frac << "; id_idx = " << id_idx << "; init_g = " << initial_guess << std::endl;
+    
     auto [left_border, right_border] = find_borders(keys, search_key, initial_guess);
     return do_binary_search(keys, search_key, left_border, right_border);
 }

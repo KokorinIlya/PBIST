@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <iostream>
 #include <unordered_set>
+#include "utils.h"
 
 TEST(interpolation_search, single_key)
 {
@@ -28,46 +29,46 @@ TEST(interpolation_search, single_key)
     ASSERT_FALSE(found_3);
 }
 
-/*
-TEST(binary_search, multiple_keys)
+TEST(interpolation_search, multiple_keys)
 {
     pasl::pctl::parray<std::pair<int32_t, bool>> keys = {
         {1, true}, {4, true}, {7, true}, {9, true}, {10, true}, {11, true}, {15, true}
     };
+    pasl::pctl::parray<uint64_t> id = build_id(keys, keys.size());
 
-    auto [idx, found] = binary_search(keys, -100);
+    auto [idx, found] = interpolation_search(keys, -100, id);
     ASSERT_EQ(0, idx);
     ASSERT_FALSE(found);
 
     for (uint64_t i = 0; i < keys.size(); ++i)
     {
-        auto [cur_idx, cur_found] = binary_search(keys, keys[i].first);
+        auto [cur_idx, cur_found] = interpolation_search(keys, keys[i].first, id);
         ASSERT_EQ(i, cur_idx);
         ASSERT_TRUE(cur_found);
     }
 
-    auto res = binary_search(keys, 100);
+    auto res = interpolation_search(keys, 100, id);
     ASSERT_EQ(7, res.first);
     ASSERT_FALSE(res.second);
 
-    res = binary_search(keys, 2);
+    res = interpolation_search(keys, 2, id);
     ASSERT_EQ(1, res.first);
     ASSERT_FALSE(res.second);
 
-    res = binary_search(keys, 5);
+    res = interpolation_search(keys, 5, id);
     ASSERT_EQ(2, res.first);
     ASSERT_FALSE(res.second);
 
-    res = binary_search(keys, 8);
+    res = interpolation_search(keys, 8, id);
     ASSERT_EQ(3, res.first);
     ASSERT_FALSE(res.second);
 
-    res = binary_search(keys, 12);
+    res = interpolation_search(keys, 12, id);
     ASSERT_EQ(6, res.first);
     ASSERT_FALSE(res.second);
 }
 
-TEST(binary_search, stress) 
+TEST(interpolation_search, stress) 
 {
     uint32_t MAX_SIZE = 100'000;
     uint32_t TESTS_COUNT = 200;
@@ -82,7 +83,9 @@ TEST(binary_search, stress)
     for (uint32_t i = 0; i < TESTS_COUNT; ++i)
     {
         uint32_t cur_size = size_distribution(generator);
+        uint32_t id_size = size_distribution(generator);
 
+        // TODO: use get_batch here
         std::vector<int32_t> keys_v;
         std::unordered_set<int32_t> keys_set;
         while (keys_v.size() < cur_size)
@@ -108,10 +111,12 @@ TEST(binary_search, stress)
             }
         );
 
+        pasl::pctl::parray<uint64_t> id = build_id(keys, id_size);
+
         for (uint32_t j = 0; j < REQUESTS_PER_TEST; ++j)
         {
             int32_t cur_req =  elements_distribution(generator);
-            auto [idx, found] = binary_search(keys, cur_req);
+            auto [idx, found] = interpolation_search(keys, cur_req, id);
             ASSERT_EQ(keys_set.find(cur_req) != keys_set.end(), found);
             if (found)
             {
@@ -135,4 +140,3 @@ TEST(binary_search, stress)
         }
     }
 }
-*/
