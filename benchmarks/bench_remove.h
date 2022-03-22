@@ -43,7 +43,7 @@ static void bench_remove_par(benchmark::State& state)
 }
 
 BENCHMARK(bench_remove_par)
-    ->Args({10'000'000, 1'000'000, -10'000'000, 10'000'000})
+    ->Args({100'000'000, 10'000'000, -100'000'000, 100'000'000})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(1)
     ->Iterations(5)
@@ -86,7 +86,7 @@ static void bench_remove_seq(benchmark::State& state)
 
 
 BENCHMARK(bench_remove_seq)
-    ->Args({10'000'000, 1'000'000, -10'000'000, 10'000'000})
+    ->Args({100'000'000, 10'000'000, -100'000'000, 100'000'000})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(1)
     ->Iterations(5)

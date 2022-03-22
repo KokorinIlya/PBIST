@@ -5,3 +5,4 @@
 #include "bench_contains.h"
 #include "bench_insert.h"
 #include "bench_remove.h"
+#include "bench_search.h"
