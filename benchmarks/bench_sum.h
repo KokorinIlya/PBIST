@@ -2,34 +2,40 @@
 
 #include <benchmark/benchmark.h>
 #include <random>
-#include "ist_internal/build.h"
-#include "ist_internal/node.h"
+#include "datapar.hpp"
+#include "parray.hpp"
+#include "sum.h"
 #include <cstdint>
-#include "utils.h"
+#include <chrono>
+#include <iostream>
 #include <cassert>
+//#include <hwloc.h>
 
-static void bench_build(benchmark::State& state) 
+static void bench_sum_pctl(benchmark::State& state) 
 {
     assert(false);
     
     uint64_t size = state.range(0);
-    int32_t keys_from = state.range(1);
-    int32_t keys_to = state.range(2);
-    uint64_t size_threshold = 3;
+    int64_t keys_from = state.range(1);
+    int64_t keys_to = state.range(2);
 
     std::default_random_engine generator(time(nullptr));
-    std::uniform_int_distribution<int32_t> elements_distribution(keys_from, keys_to);
+    std::uniform_int_distribution<int64_t> elements_distribution(keys_from, keys_to);
 
     for (auto _ : state) 
     {
         //state.PauseTiming();
-        pasl::pctl::parray<int32_t> keys = get_batch(size, generator, elements_distribution);
+        pasl::pctl::parray<int64_t> arr(pasl::pctl::raw{}, size);
+        for (uint64_t i = 0; i < size; ++i) 
+        {
+            arr[i] = elements_distribution(generator);
+        }
         //state.ResumeTiming();
 
         auto start = std::chrono::high_resolution_clock::now();
-
-        auto result = build_from_keys(keys, size_threshold);
-        benchmark::DoNotOptimize(result);
+        
+        int64_t sum = calc_sum_parallel(arr);
+        benchmark::DoNotOptimize(sum);
         benchmark::ClobberMemory();
 
         auto end = std::chrono::high_resolution_clock::now();
@@ -38,9 +44,9 @@ static void bench_build(benchmark::State& state)
     }
 }
 
-BENCHMARK(bench_build)
-    ->Args({10'000'000, -1'000'000'000, 1'000'000'000})
+BENCHMARK(bench_sum_pctl)
+    ->Args({1'000'000'000, -1'000'000, 1'000'000})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(1)
-    ->Iterations(5)
+    ->Iterations(1)
     ->UseManualTime();

@@ -26,11 +26,12 @@ public:
             {
                 return false;
             }
+            assert(cur_node->keys.size() == cur_node->keys_exist.size());
             auto [idx, found] = binary_search(cur_node->keys, search_key);
             if (found)
             {
-                assert(cur_node->keys[idx].first == search_key);
-                return cur_node->keys[idx].second;
+                assert(cur_node->keys[idx] == search_key);
+                return cur_node->keys_exist[idx];
             }
             else
             {

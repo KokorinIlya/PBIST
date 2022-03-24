@@ -6,6 +6,7 @@
 #include <utility>
 #include <cstdint>
 #include "parray.hpp"
+#include <set>
 
 template <typename T>
 pasl::pctl::parray<T> get_batch(
@@ -37,4 +38,19 @@ pasl::pctl::parray<T> get_batch(
         }
     );
     return keys;
+}
+
+template <typename T>
+std::set<T> get_set(
+    uint64_t set_size,
+    std::default_random_engine& generator, std::uniform_int_distribution<T>& elements_distribution) 
+{
+    std::set<T> result;
+    while (result.size() < set_size)
+    {
+        int32_t cur_elem =  elements_distribution(generator);
+        result.insert(cur_elem);
+    }
+    assert(result.size() == set_size);
+    return result;
 }

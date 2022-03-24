@@ -12,3 +12,5 @@ pctl/
 share/
 *.out
 .vscode
+tcmalloc
+build_release_vaksenov.sh

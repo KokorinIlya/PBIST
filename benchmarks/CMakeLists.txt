@@ -7,4 +7,10 @@ link_directories(lib/src)
 add_executable(run_benchmarks.out 
     all_benchmarks.cpp
 )
-target_link_libraries(run_benchmarks.out pthread cilkrts benchmark_main)
+target_link_libraries(run_benchmarks.out pthread benchmark_main)
+
+add_executable(bench_sum_ng.out bench_sum_ng.cpp)
+target_link_libraries(bench_sum_ng.out pthread)
+
+add_executable(bench_sort_ng.out bench_sort_ng.cpp)
+target_link_libraries(bench_sort_ng.out pthread)
