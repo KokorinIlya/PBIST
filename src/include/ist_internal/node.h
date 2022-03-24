@@ -26,11 +26,11 @@ private:
     pasl::pctl::parray<bool> keys_exist;
     // children.size() == 0 || children.size() == keys.size() + 1
     pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> children;
+    pasl::pctl::parray<uint64_t> id;
 
     const uint64_t initial_size;
     uint64_t cur_size;
     uint64_t modifications_count;
-
 
     /*
     Structure checking for assertions
@@ -401,7 +401,7 @@ private:
             [this, &arr, &result, &child_idx, left_border, right_border](uint64_t key_idx)
             {
                 assert(left_border <= key_idx && key_idx < right_border);
-                auto [search_idx, found] = binary_search(this->keys, arr[key_idx]);
+                auto [search_idx, found] = interpolation_search(this->keys, arr[key_idx], this->id);
                 if (found)
                 {
                     assert(this->keys[search_idx] == arr[key_idx]);
@@ -472,7 +472,7 @@ private:
             right_border - left_border, 
             [this, left_border, &keys] (uint64_t i)
             {
-                auto [idx, found] = binary_search(this->keys, keys[left_border + i]);
+                auto [idx, found] = interpolation_search(this->keys, keys[left_border + i], this->id);
                 assert(
                     !found || 
                     (
@@ -507,7 +507,7 @@ private:
             [this, &keys, &child_idx, left_border, right_border](uint64_t key_idx)
             {
                 assert(left_border <= key_idx && key_idx < right_border);
-                auto [search_idx, found] = binary_search(this->keys, keys[key_idx]);
+                auto [search_idx, found] = interpolation_search(this->keys, keys[key_idx], this->id);
 
                 if (found)
                 {
@@ -594,7 +594,7 @@ private:
             [this, &keys, &child_idx, left_border, right_border](uint64_t key_idx)
             {
                 assert(left_border <= key_idx && key_idx < right_border);
-                auto [search_idx, found] = binary_search(this->keys, keys[key_idx]);
+                auto [search_idx, found] = interpolation_search(this->keys, keys[key_idx], this->id);
 
                 if (found)
                 {
@@ -666,6 +666,7 @@ public:
         keys_exist(pasl::pctl::raw{}, keys.size(), true),
         //children(std::move(_children)),
         children(pasl::pctl::raw{}, 0),
+        id(build_id(keys, keys.size())),
         initial_size(keys_count),
         cur_size(keys_count),
         modifications_count(static_cast<uint64_t>(0))
@@ -783,7 +784,7 @@ public:
                 [this, &arr, &result, left_border, right_border](long key_idx)
                 {
                     assert(left_border <= key_idx && key_idx < right_border);
-                    auto [search_idx, found] = binary_search(this->keys, arr[key_idx]);
+                    auto [search_idx, found] = interpolation_search(this->keys, arr[key_idx], this->id);
                     if (found)
                     {
                         assert(this->keys[search_idx] == arr[key_idx]);
@@ -860,7 +861,7 @@ public:
                 left_border, right_border,
                 [this, &keys](uint64_t remove_key_idx)
                 {
-                    auto [idx, found] = binary_search(this->keys, keys[remove_key_idx]);
+                    auto [idx, found] = interpolation_search(this->keys, keys[remove_key_idx], this->id);
                     assert(
                         found && 0 <= idx && idx < this->keys.size() && 
                         this->keys[idx] == keys[remove_key_idx] && 
