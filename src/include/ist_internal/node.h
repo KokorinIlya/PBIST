@@ -401,7 +401,10 @@ private:
             [this, &arr, &result, &child_idx, left_border, right_border](uint64_t key_idx)
             {
                 assert(left_border <= key_idx && key_idx < right_border);
-                auto [search_idx, found] = interpolation_search(this->keys, arr[key_idx], this->id);
+                auto [search_idx, found] = interpolation_search(
+                    this->keys, arr[key_idx], this->id,
+                    &exp_ops_cnt, &bin_ops_cnt, &total_searches
+                );
                 if (found)
                 {
                     assert(this->keys[search_idx] == arr[key_idx]);
@@ -472,7 +475,10 @@ private:
             right_border - left_border, 
             [this, left_border, &keys] (uint64_t i)
             {
-                auto [idx, found] = interpolation_search(this->keys, keys[left_border + i], this->id);
+                auto [idx, found] = interpolation_search(
+                    this->keys, keys[left_border + i], this->id,
+                    &exp_ops_cnt, &bin_ops_cnt, &total_searches
+                );
                 assert(
                     !found || 
                     (
@@ -507,7 +513,10 @@ private:
             [this, &keys, &child_idx, left_border, right_border](uint64_t key_idx)
             {
                 assert(left_border <= key_idx && key_idx < right_border);
-                auto [search_idx, found] = interpolation_search(this->keys, keys[key_idx], this->id);
+                auto [search_idx, found] = interpolation_search(
+                    this->keys, keys[key_idx], this->id,
+                    &exp_ops_cnt, &bin_ops_cnt, &total_searches
+                );
 
                 if (found)
                 {
@@ -594,7 +603,10 @@ private:
             [this, &keys, &child_idx, left_border, right_border](uint64_t key_idx)
             {
                 assert(left_border <= key_idx && key_idx < right_border);
-                auto [search_idx, found] = interpolation_search(this->keys, keys[key_idx], this->id);
+                auto [search_idx, found] = interpolation_search(
+                    this->keys, keys[key_idx], this->id,
+                    &exp_ops_cnt, &bin_ops_cnt, &total_searches
+                );
 
                 if (found)
                 {
@@ -657,6 +669,10 @@ private:
 
 public:
     friend struct ist_internal<T>;
+
+    mutable uint64_t bin_ops_cnt = 0;
+    mutable uint64_t exp_ops_cnt = 0;
+    mutable uint64_t total_searches = 0;
 
     ist_internal_node(
         pasl::pctl::parray<T>&& _keys,
@@ -784,7 +800,10 @@ public:
                 [this, &arr, &result, left_border, right_border](long key_idx)
                 {
                     assert(left_border <= key_idx && key_idx < right_border);
-                    auto [search_idx, found] = interpolation_search(this->keys, arr[key_idx], this->id);
+                    auto [search_idx, found] = interpolation_search(
+                        this->keys, arr[key_idx], this->id,
+                        &exp_ops_cnt, &bin_ops_cnt, &total_searches
+                    );
                     if (found)
                     {
                         assert(this->keys[search_idx] == arr[key_idx]);
@@ -861,7 +880,10 @@ public:
                 left_border, right_border,
                 [this, &keys](uint64_t remove_key_idx)
                 {
-                    auto [idx, found] = interpolation_search(this->keys, keys[remove_key_idx], this->id);
+                    auto [idx, found] = interpolation_search(
+                        this->keys, keys[remove_key_idx], this->id,
+                        &exp_ops_cnt, &bin_ops_cnt, &total_searches
+                    );
                     assert(
                         found && 0 <= idx && idx < this->keys.size() && 
                         this->keys[idx] == keys[remove_key_idx] && 
@@ -889,6 +911,19 @@ public:
         else
         {
             return {};
+        }
+    }
+
+    // TODO: use structs
+    void get_access_stats(std::vector<std::tuple<uint64_t, uint64_t, uint64_t, uint64_t>>& v) const
+    {
+        v.push_back({keys.size(), exp_ops_cnt, bin_ops_cnt, total_searches});
+        for (std::unique_ptr<ist_internal_node<T>> const& ptr : children)
+        {
+            if (ptr.get() != nullptr)
+            {
+                ptr->get_access_stats(v);
+            }
         }
     }
 };

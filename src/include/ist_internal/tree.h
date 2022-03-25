@@ -165,6 +165,26 @@ public:
             return root->calc_node_size();
         }
     }
+
+    std::vector<std::tuple<uint64_t, uint64_t, uint64_t, uint64_t>> get_access_stats() const
+    {
+        std::vector<std::tuple<uint64_t, uint64_t, uint64_t, uint64_t>> res;
+        if (root.get() != nullptr)
+        {
+            root->get_access_stats(res);
+        }
+        
+        std::sort(
+            res.begin(), res.end(),
+            [](
+                std::tuple<uint64_t, uint64_t, uint64_t, uint64_t> const& a, 
+                std::tuple<uint64_t, uint64_t, uint64_t, uint64_t> const& b)
+            {
+                return std::get<0>(a) < std::get<0>(b);
+            }
+        );
+        return res;
+    }
 private:
     std::unique_ptr<ist_internal_node<T>> root;
     const uint64_t _size_threshold;
