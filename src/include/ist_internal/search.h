@@ -22,7 +22,7 @@ std::pair<uint64_t, bool> do_binary_search(
 
         uint64_t cur_mid = cur_left + ((cur_right - cur_left) >> 1);
         ++(*bin_ops_cnt_ptr);
-        std::cout << "BINOP" << std::endl;
+        //std::cout << "BINOP" << std::endl;
         if (search_key > keys[cur_mid])
         {
             cur_left = cur_mid;

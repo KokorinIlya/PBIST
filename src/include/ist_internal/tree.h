@@ -166,9 +166,9 @@ public:
         }
     }
 
-    std::vector<std::tuple<uint64_t, uint64_t, uint64_t, uint64_t>> get_access_stats() const
+    std::vector<access_stats> get_access_stats() const
     {
-        std::vector<std::tuple<uint64_t, uint64_t, uint64_t, uint64_t>> res;
+        std::vector<access_stats> res;
         if (root.get() != nullptr)
         {
             root->get_access_stats(res);
@@ -176,11 +176,9 @@ public:
         
         std::sort(
             res.begin(), res.end(),
-            [](
-                std::tuple<uint64_t, uint64_t, uint64_t, uint64_t> const& a, 
-                std::tuple<uint64_t, uint64_t, uint64_t, uint64_t> const& b)
+            [](access_stats const& a, access_stats const& b)
             {
-                return std::get<0>(a) < std::get<0>(b);
+                return a.keys_count > b.keys_count;
             }
         );
         return res;

@@ -16,6 +16,14 @@
 template <typename T>
 struct ist_internal;
 
+struct access_stats
+{
+    uint64_t keys_count;
+    uint64_t exp_interations;
+    uint64_t bin_iterations;  
+    uint64_t searches_count;
+};
+
 template <typename T>
 struct ist_internal_node
 {
@@ -401,9 +409,9 @@ private:
             [this, &arr, &result, &child_idx, left_border, right_border](uint64_t key_idx)
             {
                 assert(left_border <= key_idx && key_idx < right_border);
-                auto [search_idx, found] = interpolation_search(
-                    this->keys, arr[key_idx], this->id,
-                    &exp_ops_cnt, &bin_ops_cnt, &total_searches
+                auto [search_idx, found] = binary_search(
+                    this->keys, arr[key_idx], /*this->id,*/
+                    /*&exp_ops_cnt,*/ &bin_ops_cnt, &total_searches
                 );
                 if (found)
                 {
@@ -475,9 +483,9 @@ private:
             right_border - left_border, 
             [this, left_border, &keys] (uint64_t i)
             {
-                auto [idx, found] = interpolation_search(
+                auto [idx, found] = binary_search(
                     this->keys, keys[left_border + i], this->id,
-                    &exp_ops_cnt, &bin_ops_cnt, &total_searches
+                    /*&exp_ops_cnt,*/ &bin_ops_cnt, &total_searches
                 );
                 assert(
                     !found || 
@@ -513,9 +521,9 @@ private:
             [this, &keys, &child_idx, left_border, right_border](uint64_t key_idx)
             {
                 assert(left_border <= key_idx && key_idx < right_border);
-                auto [search_idx, found] = interpolation_search(
+                auto [search_idx, found] = binary_search(
                     this->keys, keys[key_idx], this->id,
-                    &exp_ops_cnt, &bin_ops_cnt, &total_searches
+                    /*&exp_ops_cnt,*/ &bin_ops_cnt, &total_searches
                 );
 
                 if (found)
@@ -603,9 +611,9 @@ private:
             [this, &keys, &child_idx, left_border, right_border](uint64_t key_idx)
             {
                 assert(left_border <= key_idx && key_idx < right_border);
-                auto [search_idx, found] = interpolation_search(
+                auto [search_idx, found] = binary_search(
                     this->keys, keys[key_idx], this->id,
-                    &exp_ops_cnt, &bin_ops_cnt, &total_searches
+                    /*&exp_ops_cnt,*/ &bin_ops_cnt, &total_searches
                 );
 
                 if (found)
@@ -800,9 +808,9 @@ public:
                 [this, &arr, &result, left_border, right_border](long key_idx)
                 {
                     assert(left_border <= key_idx && key_idx < right_border);
-                    auto [search_idx, found] = interpolation_search(
-                        this->keys, arr[key_idx], this->id,
-                        &exp_ops_cnt, &bin_ops_cnt, &total_searches
+                    auto [search_idx, found] = binary_search(
+                        this->keys, arr[key_idx],
+                        &bin_ops_cnt, &total_searches
                     );
                     if (found)
                     {
@@ -880,9 +888,9 @@ public:
                 left_border, right_border,
                 [this, &keys](uint64_t remove_key_idx)
                 {
-                    auto [idx, found] = interpolation_search(
+                    auto [idx, found] = binary_search(
                         this->keys, keys[remove_key_idx], this->id,
-                        &exp_ops_cnt, &bin_ops_cnt, &total_searches
+                        /*&exp_ops_cnt,*/ &bin_ops_cnt, &total_searches
                     );
                     assert(
                         found && 0 <= idx && idx < this->keys.size() && 
@@ -915,9 +923,9 @@ public:
     }
 
     // TODO: use structs
-    void get_access_stats(std::vector<std::tuple<uint64_t, uint64_t, uint64_t, uint64_t>>& v) const
+    void get_access_stats(std::vector<access_stats>& v) const
     {
-        v.push_back({keys.size(), exp_ops_cnt, bin_ops_cnt, total_searches});
+        v.push_back({static_cast<uint64_t>(keys.size()), exp_ops_cnt, bin_ops_cnt, total_searches});
         for (std::unique_ptr<ist_internal_node<T>> const& ptr : children)
         {
             if (ptr.get() != nullptr)

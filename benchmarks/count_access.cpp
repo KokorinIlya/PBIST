@@ -42,17 +42,14 @@ int main()
     auto tree = ist_internal(keys, size_threshold);
     pasl::pctl::parray<bool> result = tree.contains(batch);
 
-    std::vector<std::tuple<uint64_t, uint64_t, uint64_t, uint64_t>> res = tree.get_access_stats();
+    std::vector<access_stats> res = tree.get_access_stats();
     std::ofstream file;
     file.open("stats.txt");
-    for (std::tuple<uint64_t, uint64_t, uint64_t, uint64_t> const& t : res)
+    for (access_stats const& t : res)
     {
         auto [sz, exp, bin, total] = t;
-        if (bin != 0)
-        {
-            std::cout << "NON-NULL: " << sz << " " << exp << " " << bin << " " << total << std::endl;
-        }
-        file << sz << " " << exp << " " << bin << " " << total << std::endl;
+        file << t.keys_count << " " << t.exp_interations << " " << t.bin_iterations << " " << 
+                t.searches_count << std::endl;
     }
     file.close();
 
