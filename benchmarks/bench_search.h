@@ -48,10 +48,10 @@ static void bench_binary_search_uniform(benchmark::State& state)
 }
 
 BENCHMARK(bench_binary_search_uniform)
-    ->Args({100'000'000, 100'000, -1'000'000'000, 1'000'000'000})
+    ->Args({10'000, 1'000'000, -1'000'000'000, 1'000'000'000})
     ->Unit(benchmark::kMillisecond)
-    ->Repetitions(1)
-    ->Iterations(5)
+    ->Repetitions(5)
+    ->Iterations(10)
     ->UseManualTime();
 
 static void bench_interpolation_search_uniform(benchmark::State& state) 
@@ -94,8 +94,8 @@ static void bench_interpolation_search_uniform(benchmark::State& state)
 }
 
 BENCHMARK(bench_interpolation_search_uniform)
-    ->Args({100'000'000, 100'000, -1'000'000'000, 1'000'000'000})
+    ->Args({10'000, 1'000'000, -1'000'000'000, 1'000'000'000})
     ->Unit(benchmark::kMillisecond)
-    ->Repetitions(1)
-    ->Iterations(5)
+    ->Repetitions(5)
+    ->Iterations(10)
     ->UseManualTime();
