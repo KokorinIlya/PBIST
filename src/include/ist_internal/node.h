@@ -664,15 +664,13 @@ public:
         uint64_t keys_count
     ) : keys(std::move(_keys)), 
         keys_exist(pasl::pctl::raw{}, keys.size(), true),
-        //children(std::move(_children)),
-        children(pasl::pctl::raw{}, 0),
+        children(std::move(_children)),
         //id(build_id(keys, keys.size())),
         id(pasl::pctl::raw{}, 0),
         initial_size(keys_count),
         cur_size(keys_count),
         modifications_count(static_cast<uint64_t>(0))
     {
-        children = std::move(_children);
         assert(keys.size() > 0 && "Empty key array passed to the constructor");
         assert(
             children.size() == 0 || 

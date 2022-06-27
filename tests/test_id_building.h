@@ -22,7 +22,7 @@ TEST(id_building, simple)
 
 TEST(id_building, stress) 
 {
-    uint32_t MAX_SIZE = 100'000;
+    uint32_t MAX_SIZE = 1'000;
     uint32_t TESTS_COUNT = 200;
     int32_t KEYS_FROM = -1'000'000;
     int32_t KEYS_TO = 1'000'000;
@@ -52,7 +52,7 @@ TEST(id_building, stress)
             uint32_t result = 200'000;
             for (uint32_t k = 0; k < keys.size(); ++k)
             {
-                if (frac <= keys[k])
+                if (keys[k] >= frac)
                 {
                     result = k;
                     break;
