@@ -9,10 +9,11 @@
 #include "utils.h"
 #include <cassert>
 #include <set>
+#include <iostream>
 
 static void bench_contains_par(benchmark::State& state) 
 {
-    assert(false);
+//    assert(false);
     
     uint64_t tree_size = state.range(0);
     uint64_t batch_size = state.range(1);
@@ -25,6 +26,7 @@ static void bench_contains_par(benchmark::State& state)
 
     for (auto _ : state) 
     {
+        std::cout << "Iteration" << std::endl;
         //state.PauseTiming();
         pasl::pctl::parray<int32_t> keys = get_batch(tree_size, generator, elements_distribution);
         pasl::pctl::parray<int32_t> batch = get_batch(batch_size, generator, elements_distribution);
@@ -44,7 +46,8 @@ static void bench_contains_par(benchmark::State& state)
 }
 
 BENCHMARK(bench_contains_par)
-    ->Args({100'000'000, 10'000'000, -1'000'000'000, 1'000'000'000})
+//    ->Args({10'000'000, 1'000'000, -1'000'000'000, 1'000'000'000})
+    ->Args({100, 10, -1'000, 1'000})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(1)
     ->Iterations(5)
@@ -53,7 +56,7 @@ BENCHMARK(bench_contains_par)
 
 static void bench_contains_seq(benchmark::State& state) 
 {
-    assert(false);
+//    assert(false);
     
     uint64_t tree_size = state.range(0);
     uint64_t batch_size = state.range(1);
@@ -65,6 +68,7 @@ static void bench_contains_seq(benchmark::State& state)
 
     for (auto _ : state) 
     {
+        std::cout << "Iteration" << std::endl;
         //state.PauseTiming();
         std::set<int32_t> tree = get_set(tree_size, generator, elements_distribution);
         pasl::pctl::parray<int32_t> batch = get_batch(batch_size, generator, elements_distribution);
@@ -76,7 +80,7 @@ static void bench_contains_seq(benchmark::State& state)
         {
             bool result = tree.find(cur_elem) != tree.end();
             benchmark::DoNotOptimize(result);
-            // TODO: maybe, ClobberMemory() only befores measuring the end?
+            // TODO: maybe, ClobberMemory() only before measuring the end?
             benchmark::ClobberMemory();
         }
 
@@ -88,7 +92,8 @@ static void bench_contains_seq(benchmark::State& state)
 
 
 BENCHMARK(bench_contains_seq)
-    ->Args({100'000'000, 10'000'000, -1'000'000'000, 1'000'000'000})
+//    ->Args({10'000'000, 1'000'000, -1'000'000'000, 1'000'000'000})
+    ->Args({100, 10, -1'000, 1'000})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(1)
     ->Iterations(5)

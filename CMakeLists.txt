@@ -12,7 +12,7 @@ include_directories(./chunkedseq/include)
 include_directories(./src/include)
 
 add_link_options(-fopencilk)
-add_compile_options(-fopencilk -DUSE_CILK_PLUS_RUNTIME -std=c++17 -O2)
+add_compile_options(-fopencilk -DUSE_CILK_PLUS_RUNTIME -std=c++17 -O0 -g)
 
 add_subdirectory(tests)
 add_subdirectory(benchmarks)

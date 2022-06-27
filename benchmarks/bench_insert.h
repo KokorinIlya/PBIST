@@ -66,15 +66,13 @@ static void bench_multi_insert_par(benchmark::State& state)
 
     for (auto _ : state) 
     {
-        //state.PauseTiming();
+        std::cout << "Iteration" << std::endl;
         pasl::pctl::parray<int32_t> keys = get_batch(tree_size, generator, elements_distribution);
         auto tree = ist_internal(keys, size_threshold);
-        //state.ResumeTiming();
 
         double total_time = 0.0;
         for (uint64_t i = 0; i < batch_count; ++i)
         {
-            std::cout << "Batch#" << i << std::endl;
             pasl::pctl::parray<int32_t> batch = get_batch(batch_size, generator, elements_distribution);
             auto start = std::chrono::high_resolution_clock::now();
 
@@ -96,7 +94,7 @@ static void bench_multi_insert_par(benchmark::State& state)
 }
 
 BENCHMARK(bench_multi_insert_par)
-    ->Args({100'000'000, 10'000, 10'000, -100'000'000, 100'000'000})
+    ->Args({100'000'000, 1'000, 10'000, -100'000'000, 100'000'000})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(1)
     ->Iterations(5)
