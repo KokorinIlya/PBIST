@@ -90,3 +90,7 @@ cc_binary(
   * e.g. `CILK_NWORKERS=16  taskset 0xFFFF numactl --interleave=all ./build-release/benchmarks/run_benchmarks.out`
 * Use `CILK_NWORKERS=N  taskset 0xFFFF numactl --cpubind=0 --membind=0 command` to execute `command` on cores [0-15], while allocating memory only on `0` NUMA node
   * e.g. `CILK_NWORKERS=16  taskset 0xFFFF numactl --cpubind=0 --membind=0 ./build-release/benchmarks/run_benchmarks.out`
+
+## Checking for memory leaks
+* `valgrind --leak-check=full --show-leak-kinds=all ./application.out 2> valgrind.out`
+* e.g., `valgrind --leak-check=full --show-leak-kinds=all ./build-debug/benchmarks/run_benchmarks.out --benchmark_filter=.* 2> valgrind.out`
