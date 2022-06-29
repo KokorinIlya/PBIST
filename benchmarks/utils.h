@@ -41,6 +41,33 @@ pasl::pctl::parray<T> get_batch(
 }
 
 template <typename T>
+pasl::pctl::parray<T> get_batch_with_prob(
+    T left_border, T right_border, double p,
+    std::default_random_engine& generator) 
+{
+    assert(left_border < right_border);
+    std::uniform_real_distribution<double> dist(0.0, 1.0);
+    std::vector<T> keys_v;
+    for (int64_t i = left_border; i < right_border; ++i)
+    {
+        double x = dist(generator);
+        if (x < p)
+        {
+            keys_v.push_back(i);
+        }
+    }
+
+    pasl::pctl::parray<T> keys(
+        keys_v.size(),
+        [&keys_v](uint64_t i)
+        {
+            return keys_v[i];
+        }
+    );
+    return keys;
+}
+
+template <typename T>
 std::set<T> get_set(
     uint64_t set_size,
     std::default_random_engine& generator, std::uniform_int_distribution<T>& elements_distribution) 

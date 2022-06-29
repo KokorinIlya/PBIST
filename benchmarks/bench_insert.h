@@ -10,7 +10,7 @@
 #include <cassert>
 #include <iostream>
 
-static void bench_insert_par(benchmark::State& state) 
+static void bench_insert_par_exact(benchmark::State& state) 
 {
     assert(false);
     
@@ -43,11 +43,50 @@ static void bench_insert_par(benchmark::State& state)
     }
 }
 
-BENCHMARK(bench_insert_par)
+BENCHMARK(bench_insert_par_exact)
     ->Args({100'000'000, 10'000'000, -100'000'000, 100'000'000})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(1)
-    ->Iterations(5)
+    ->Iterations(1)
+    ->UseManualTime();
+  
+static void bench_insert_par_approx(benchmark::State& state) 
+{
+    assert(false);
+    
+    uint64_t tree_size = state.range(0);
+    uint64_t batch_size = tree_size / 10;
+    int32_t keys_from = -tree_size;
+    int32_t keys_to = tree_size;
+    uint64_t size_threshold = 3;
+
+    std::default_random_engine generator(time(nullptr));
+
+    for (auto _ : state) 
+    {
+        //state.PauseTiming();
+        pasl::pctl::parray<int32_t> keys = get_batch_with_prob(keys_from, keys_to, 0.5, generator);
+        pasl::pctl::parray<int32_t> batch = get_batch_with_prob(keys_from, keys_to, 0.05, generator);
+        auto tree = ist_internal(keys, size_threshold);
+        //state.ResumeTiming();
+
+        auto start = std::chrono::high_resolution_clock::now();
+
+        pasl::pctl::parray<bool> result = tree.insert(batch);
+        benchmark::DoNotOptimize(result);
+        benchmark::ClobberMemory();
+
+        auto end = std::chrono::high_resolution_clock::now();
+        auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+        state.SetIterationTime(elapsed_seconds.count());
+    }
+}
+
+BENCHMARK(bench_insert_par_approx)
+    ->Args({100'000'000})
+    ->Unit(benchmark::kMillisecond)
+    ->Repetitions(1)
+    ->Iterations(1)
     ->UseManualTime();
 
 static void bench_multi_insert_par(benchmark::State& state) 
@@ -97,7 +136,7 @@ BENCHMARK(bench_multi_insert_par)
     ->Args({100'000'000, 1'000, 10'000, -100'000'000, 100'000'000})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(1)
-    ->Iterations(5)
+    ->Iterations(1)
     ->UseManualTime();
 
 static void bench_insert_seq(benchmark::State& state) 
@@ -140,5 +179,5 @@ BENCHMARK(bench_insert_seq)
     ->Args({100'000'000, 10'000'000, -100'000'000, 100'000'000})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(1)
-    ->Iterations(5)
+    ->Iterations(1)
     ->UseManualTime();

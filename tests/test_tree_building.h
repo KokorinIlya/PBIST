@@ -23,7 +23,7 @@ TEST(tree_building, simple)
             return static_cast<int32_t>(i);
         }
     );
-    std::unique_ptr<ist_internal_node<int32_t>> result = build_from_keys(keys, 3);
+    ist_internal_node<int32_t>* result = build_from_keys(keys, 3);
 
     auto stored_keys = result->dump_keys_by_level_seq();
 
@@ -52,12 +52,14 @@ TEST(tree_building, simple)
     auto seq_flattened_keys = result->dump_keys_seq();
     std::vector<int32_t> exp_flattened_keys = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     ASSERT_EQ(exp_flattened_keys, seq_flattened_keys);
+
+    delete result;
 }
 
 TEST(tree_building, last_child_empty)
 {
     pasl::pctl::parray<int32_t> keys = {0, 1, 2, 3, 4, 5};
-    std::unique_ptr<ist_internal_node<int32_t>> result = build_from_keys(keys, 3);
+    ist_internal_node<int32_t>* result = build_from_keys(keys, 3);
 
     auto stored_keys = result->dump_keys_by_level_seq();
 
@@ -89,19 +91,23 @@ TEST(tree_building, last_child_empty)
     {
         ASSERT_EQ(keys[i], flattened_keys[i]);
     }
+
+    delete result;
 }
 
 TEST(tree_building, empty)
 {
     pasl::pctl::parray<int32_t> keys;
-    std::unique_ptr<ist_internal_node<int32_t>> result = build_from_keys(keys, 3);
-    ASSERT_EQ(nullptr, result.get());
+    ist_internal_node<int32_t>* result = build_from_keys(keys, 3);
+    ASSERT_EQ(nullptr, result);
+
+    delete result;
 }
 
 TEST(tree_building, signle_level)
 {
     pasl::pctl::parray<int32_t> keys = {0, 1, 2, 3, 4, 5};
-    std::unique_ptr<ist_internal_node<int32_t>> result = build_from_keys(keys, 10);
+    ist_internal_node<int32_t>* result = build_from_keys(keys, 10);
 
     auto stored_keys = result->dump_keys_by_level_seq();
 
@@ -117,6 +123,8 @@ TEST(tree_building, signle_level)
     {
         ASSERT_EQ(keys[i], flattened_keys[i]);
     }
+
+    delete result;
 }
 
 TEST(tree_building, stress) 
@@ -138,7 +146,7 @@ TEST(tree_building, stress)
 
         auto tree_keys = get_build_batch<int32_t>(cur_size, generator, elements_distribution).second;
 
-        std::unique_ptr<ist_internal_node<int32_t>> result = build_from_keys(tree_keys, cur_size_threshold);
+        ist_internal_node<int32_t>* result = build_from_keys(tree_keys, cur_size_threshold);
         auto flattened_keys = result->dump_keys_seq();
         ASSERT_EQ(tree_keys.size(), flattened_keys.size());
         for (uint64_t i = 0; i < tree_keys.size(); ++i)
@@ -146,7 +154,7 @@ TEST(tree_building, stress)
             ASSERT_EQ(tree_keys[i], flattened_keys[i]);
         }
 
-        if (result.get() == nullptr)
+        if (result == nullptr)
         {
             ASSERT_EQ(0, cur_size);
         }
@@ -154,5 +162,7 @@ TEST(tree_building, stress)
         {
             ASSERT_EQ(cur_size, result->calc_node_size());
         }
+
+        delete result;
     }
 }

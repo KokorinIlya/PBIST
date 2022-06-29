@@ -17,9 +17,14 @@ public:
         : root(build_from_keys(keys, size_threshold)), _size_threshold(size_threshold)
     {}
 
+    ~ist_internal()
+    {
+        delete root;
+    }
+
     bool contains(T const& search_key) const
     {
-        ist_internal_node<T> const* cur_node = root.get();
+        ist_internal_node<T> const* cur_node = root;
         while (true)
         {
             if (cur_node == nullptr)
@@ -44,7 +49,7 @@ public:
                 {
                     assert(cur_node->children.size() > 0);
                     assert(0 <= idx && idx < cur_node->children.size());
-                    cur_node = cur_node->children[idx].get();
+                    cur_node = cur_node->children[idx];
                 }
             }
         }
@@ -58,7 +63,7 @@ public:
             return pasl::pctl::parray<bool>(0);
         }
         pasl::pctl::raw raw_marker;
-        if (root.get() == nullptr)
+        if (root == nullptr)
         {
             return pasl::pctl::parray<bool>(raw_marker, keys.size(), false);
         }
@@ -75,7 +80,7 @@ public:
             return pasl::pctl::parray<bool>(0);
         }
         pasl::pctl::raw raw_marker;
-        if (root.get() == nullptr)
+        if (root == nullptr)
         {
             root = build_from_keys(keys, this->_size_threshold);
             return pasl::pctl::parray<bool>(raw_marker, keys.size(), true);
@@ -106,6 +111,7 @@ public:
             auto insert_res = root->do_insert(insert_keys, this->_size_threshold, 0, insert_keys.size());
             if (insert_res.has_value())
             {
+                delete root;
                 root = std::move(insert_res.value());
             }
         }
@@ -121,7 +127,7 @@ public:
             return pasl::pctl::parray<bool>(0);
         }
         pasl::pctl::raw raw_marker;
-        if (root.get() == nullptr)
+        if (root == nullptr)
         {
             return pasl::pctl::parray<bool>(raw_marker, keys.size(), false);
         }
@@ -144,6 +150,7 @@ public:
             auto remove_res = root->do_remove(remove_keys, this->_size_threshold, 0, remove_keys.size());
             if (remove_res.has_value())
             {
+                delete root;
                 root = std::move(remove_res.value());
             }
         }
@@ -156,7 +163,7 @@ public:
     */
     uint64_t calc_tree_size() const
     {
-        if (root.get() == nullptr)
+        if (root == nullptr)
         {
             return 0;
         }
@@ -166,6 +173,6 @@ public:
         }
     }
 private:
-    std::unique_ptr<ist_internal_node<T>> root;
+    ist_internal_node<T>* root;
     const uint64_t _size_threshold;
 };

@@ -25,10 +25,10 @@ private:
     // keys_exist.size() == keys.size()
     pasl::pctl::parray<bool> keys_exist;
     // children.size() == 0 || children.size() == keys.size() + 1
-    pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> children;
+    pasl::pctl::parray<ist_internal_node<T>*> children;
     pasl::pctl::parray<uint64_t> id;
 
-    const uint64_t initial_size;
+    uint64_t initial_size;
     uint64_t cur_size;
     uint64_t modifications_count;
 
@@ -87,7 +87,7 @@ private:
             assert(keys.size() + 1 == children.size());
             for (uint64_t i = 0; i < children.size(); ++i)
             {
-                if (children[i].get() != nullptr)
+                if (children[i] != nullptr)
                 {
                     children[i]->do_dump_keys_by_level_seq(holder, level + 1);
                 }
@@ -135,7 +135,7 @@ private:
             assert(children.size() == keys.size() + 1);
             for (uint64_t i = 0; i < keys.size(); ++i)
             {
-                if (children[i].get() != nullptr)
+                if (children[i] != nullptr)
                 {
                     children[i]->do_dump_keys_seq(res);
                 }
@@ -144,7 +144,7 @@ private:
                     res.push_back(keys[i]);
                 }
             }
-            if (children[children.size() - 1].get() != nullptr)
+            if (children[children.size() - 1] != nullptr)
             {
                 children[children.size() - 1]->do_dump_keys_seq(res);
             }
@@ -179,7 +179,7 @@ private:
                     uint64_t i = static_cast<uint64_t>(idx) / static_cast<uint64_t>(2);
                     if (idx % 2 == 0)
                     {
-                        if (this->children[i].get() != nullptr)
+                        if (this->children[i] != nullptr)
                         {
                             return this->children[i]->cur_size;
                         }
@@ -267,10 +267,10 @@ private:
                 }
 
                 assert(
-                    this->children[child_idx].get() == nullptr ||
+                    this->children[child_idx] == nullptr ||
                     this->children[child_idx]->cur_size == cur_right - cur_left
                 );
-                if (this->children[child_idx].get() != nullptr && cur_right > cur_left)
+                if (this->children[child_idx] != nullptr && cur_right > cur_left)
                 {
                     this->children[child_idx]->do_get_keys(keys_holder, cur_left, cur_right);
                 }
@@ -434,7 +434,7 @@ private:
                 int64_t cur_child_idx = child_idx[cur_range_begin];
                 assert(0 <= cur_child_idx && cur_child_idx < this->children.size());
 
-                if (this->children[cur_child_idx].get() != nullptr)
+                if (this->children[cur_child_idx] != nullptr)
                 {
                     uint64_t next_left_border = left_border + cur_range_begin;
                     uint64_t next_right_border = left_border + cur_range_end;
@@ -556,13 +556,14 @@ private:
                     next_right_border <= right_border
                 );
 
-                if (this->children[cur_child_idx].get() != nullptr)
+                if (this->children[cur_child_idx] != nullptr)
                 {
                     auto insert_res = this->children[cur_child_idx]->do_insert(
                         keys, size_threshold, next_left_border, next_right_border
                     );
                     if (insert_res.has_value())
                     {
+                        delete this->children[cur_child_idx];
                         this->children[cur_child_idx] = std::move(insert_res.value());
                     }
                 }
@@ -643,12 +644,13 @@ private:
                     next_right_border <= right_border
                 );
 
-                assert(this->children[cur_child_idx].get() != nullptr);
+                assert(this->children[cur_child_idx] != nullptr);
                 auto remove_res = this->children[cur_child_idx]->do_remove(
                     keys, size_threshold, next_left_border, next_right_border
                 );
                 if (remove_res.has_value())
                 {
+                    delete this->children[cur_child_idx];
                     this->children[cur_child_idx] = std::move(remove_res.value());
                 }
             }
@@ -659,12 +661,12 @@ public:
     friend struct ist_internal<T>;
 
     ist_internal_node(
-        pasl::pctl::parray<T>&& _keys,
-        pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>>&& _children,
+        pasl::pctl::parray<T> const& _keys,
+        pasl::pctl::parray<ist_internal_node<T>*> const& _children,
         uint64_t keys_count
-    ) : keys(std::move(_keys)), 
+    ) : keys(_keys), 
         keys_exist(pasl::pctl::raw{}, keys.size(), true),
-        children(std::move(_children)),
+        children(_children),
         //id(build_id(keys, keys.size())),
         id(pasl::pctl::raw{}, 0),
         initial_size(keys_count),
@@ -676,6 +678,14 @@ public:
             children.size() == 0 || 
             children.size() == keys.size() + 1 && "Keys and children count doesn't match"
         );
+    }
+
+    ~ist_internal_node()
+    {
+        for (uint64_t i = 0; i < this->children.size(); ++i)
+        {
+            delete this->children[i];
+        }
     }
 
     bool is_terminal() const
@@ -732,7 +742,7 @@ public:
             this->children.size(),
             [this](uint64_t idx)
             {
-                if (this->children[idx].get() == nullptr)
+                if (this->children[idx] == nullptr)
                 {
                     return static_cast<uint64_t>(0);
                 }
@@ -802,7 +812,7 @@ public:
         }
     }
 
-    std::optional<std::unique_ptr<ist_internal_node<T>>> do_insert(
+    std::optional<ist_internal_node<T>*> do_insert(
         pasl::pctl::parray<T> const& keys, uint64_t size_threshold,
         uint64_t left_border, uint64_t right_border)
     {
@@ -841,7 +851,7 @@ public:
         }
     }
 
-    std::optional<std::unique_ptr<ist_internal_node<T>>> do_remove(
+    std::optional<ist_internal_node<T>*> do_remove(
         pasl::pctl::parray<T> const& keys, uint64_t size_threshold,
         uint64_t left_border, uint64_t right_border)
     {

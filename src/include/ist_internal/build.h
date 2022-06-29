@@ -17,13 +17,13 @@ template <typename T>
 struct ist_internal_node;
 
 template <typename T>
-std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
+ist_internal_node<T>* do_build_from_keys(
     pasl::pctl::parray<T> const& keys, 
     uint64_t left, uint64_t right, uint64_t size_threshold);
 
 template <typename T>
 void do_build_single_cell(
-    pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>>& children,
+    pasl::pctl::parray<ist_internal_node<T>*>& children,
     pasl::pctl::parray<T>& reps,
     pasl::pctl::parray<T> const& keys,
     uint64_t block_size, uint64_t rep_size, uint64_t size_threshold, 
@@ -36,7 +36,7 @@ void do_build_single_cell(
 
         T const& cur_rep = keys[end_idx];
         new (&reps[child_idx]) T(cur_rep);
-        new (&children[child_idx]) std::unique_ptr<ist_internal_node<T>>(
+        new (&children[child_idx]) ist_internal_node<T>*(
             do_build_from_keys(keys, start_idx, end_idx, size_threshold)
         );
     }
@@ -45,14 +45,14 @@ void do_build_single_cell(
         assert(child_idx == rep_size);
         uint64_t start_idx = left + child_idx * (block_size + 1);
         uint64_t end_idx = right;
-        new (&children[child_idx]) std::unique_ptr<ist_internal_node<T>>(
+        new (&children[child_idx]) ist_internal_node<T>*(
             do_build_from_keys(keys, start_idx, end_idx, size_threshold)
         );
     }
 }
 
 template <typename T>
-std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
+ist_internal_node<T>* do_build_from_keys(
     pasl::pctl::parray<T> const& keys, 
     uint64_t left, uint64_t right, uint64_t size_threshold)
 {
@@ -61,7 +61,7 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
     assert(right >= left);
     if (left == right)
     {
-        return std::unique_ptr<ist_internal_node<T>>(nullptr);
+        return nullptr;
     }
 
     uint64_t keys_count = right - left;
@@ -76,16 +76,17 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
                 return keys[key_idx];
             }
         );
-        pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> children(raw_marker, 0);
+        pasl::pctl::parray<ist_internal_node<T>*> children(raw_marker, 0);
 
-        return std::make_unique<ist_internal_node<T>>(std::move(reps), std::move(children), keys_count);
+        ist_internal_node<T>* answer = new ist_internal_node<T>(reps, children, keys_count);  // TODO: move
+        return answer;
     }
 
     uint64_t block_size = static_cast<uint64_t>(std::sqrt(keys_count));
     uint64_t rep_size = keys_count / (block_size + 1);
 
     pasl::pctl::parray<T> reps(raw_marker, rep_size);
-    pasl::pctl::parray<std::unique_ptr<ist_internal_node<T>>> children(raw_marker, rep_size + 1);
+    pasl::pctl::parray<ist_internal_node<T>*> children(raw_marker, rep_size + 1);
 
     pasl::pctl::range::parallel_for(
         static_cast<uint64_t>(0), static_cast<uint64_t>(rep_size + 1),
@@ -130,11 +131,17 @@ std::unique_ptr<ist_internal_node<T>> do_build_from_keys(
             }
         }
     );
-    return std::make_unique<ist_internal_node<T>>(std::move(reps), std::move(children), keys_count);
+    ist_internal_node<T>* answer = new ist_internal_node<T>(reps, children, keys_count); // TODO: move
+    for (uint64_t i = 0; i < children.size(); ++i)
+    {
+        children[i] = nullptr;
+    }
+    return answer; 
+    //return new ist_internal_node<T>(reps, children, keys_count); 
 }
 
 template <typename T>
-std::unique_ptr<ist_internal_node<T>> build_from_keys(pasl::pctl::parray<T> const& keys, uint64_t size_threshold)
+ist_internal_node<T>* build_from_keys(pasl::pctl::parray<T> const& keys, uint64_t size_threshold)
 {
     assert(is_sorted(keys, true));
     return do_build_from_keys(keys, 0, keys.size(), size_threshold);

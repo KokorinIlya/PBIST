@@ -20,7 +20,7 @@ TEST(parallel_flatten, simple)
             return static_cast<int32_t>(i);
         }
     );
-    std::unique_ptr<ist_internal_node<int32_t>> result = build_from_keys(keys, 3);
+    ist_internal_node<int32_t>* result = build_from_keys(keys, 3);
     auto par_flattened_keys = result->get_keys();
     pasl::pctl::parray<int32_t> exp_par_flattened_keys = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     ASSERT_EQ(exp_par_flattened_keys.size(), par_flattened_keys.size());
@@ -28,6 +28,7 @@ TEST(parallel_flatten, simple)
     {
         ASSERT_EQ(exp_par_flattened_keys[i], par_flattened_keys[i]);
     }
+    delete result;
 }
 
 TEST(parallel_flatten, stress) 
@@ -49,12 +50,13 @@ TEST(parallel_flatten, stress)
 
         auto tree_keys = get_build_batch<int32_t>(cur_size, generator, elements_distribution).second;
 
-        std::unique_ptr<ist_internal_node<int32_t>> result = build_from_keys(tree_keys, cur_size_threshold);
+        ist_internal_node<int32_t>* result = build_from_keys(tree_keys, cur_size_threshold);
         auto flattened_keys = result->get_keys();
         ASSERT_EQ(tree_keys.size(), flattened_keys.size());
         for (uint64_t i = 0; i < flattened_keys.size(); ++i)
         {
             ASSERT_EQ(tree_keys[i], flattened_keys[i]);
         }
+        delete result;
     }
 }
