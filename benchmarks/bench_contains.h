@@ -48,8 +48,8 @@ static void bench_contains_par_exact(benchmark::State& state)
 BENCHMARK(bench_contains_par_exact)
     ->Args({100'000'000, 10'000'000, -1'000'000'000, 1'000'000'000})
     ->Unit(benchmark::kMillisecond)
-    ->Repetitions(1)
-    ->Iterations(1)
+    ->Repetitions(3)
+    ->Iterations(5)
     ->UseManualTime();
 
 static void bench_contains_par_approx(benchmark::State& state) 
@@ -130,7 +130,7 @@ static void bench_contains_seq(benchmark::State& state)
 
 
 BENCHMARK(bench_contains_seq)
-    ->Args({10'000'000, 1'000'000, -1'000'000'000, 1'000'000'000})
+    ->Args({100'000'000, 10'000'000, -1'000'000'000, 1'000'000'000})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(1)
     ->Iterations(1)

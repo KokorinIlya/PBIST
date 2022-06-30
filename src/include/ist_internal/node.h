@@ -382,6 +382,18 @@ private:
         assert(range_begins.size() == range_ends.size());
         return {range_begins, range_ends};
     }
+
+    std::pair<uint64_t, bool> do_search(T const& key) const
+    {
+        if (this->id.size() == 0)
+        {
+            return binary_search(this->keys, key);
+        }
+        else
+        {
+            return interpolation_search(this->keys, key, this->id);
+        }
+    }
      
     /*
     Batch contains
@@ -401,7 +413,7 @@ private:
             [this, &arr, &result, &child_idx, left_border, right_border](uint64_t key_idx)
             {
                 assert(left_border <= key_idx && key_idx < right_border);
-                auto [search_idx, found] = binary_search(this->keys, arr[key_idx]);
+                auto [search_idx, found] = do_search(arr[key_idx]);
                 if (found)
                 {
                     assert(this->keys[search_idx] == arr[key_idx]);
@@ -472,7 +484,7 @@ private:
             right_border - left_border, 
             [this, left_border, &keys] (uint64_t i)
             {
-                auto [idx, found] = binary_search(this->keys, keys[left_border + i]);
+                auto [idx, found] = do_search(keys[left_border + i]);
                 assert(
                     !found || 
                     (
@@ -507,7 +519,7 @@ private:
             [this, &keys, &child_idx, left_border, right_border](uint64_t key_idx)
             {
                 assert(left_border <= key_idx && key_idx < right_border);
-                auto [search_idx, found] = binary_search(this->keys, keys[key_idx]);
+                auto [search_idx, found] = do_search(keys[key_idx]);
 
                 if (found)
                 {
@@ -595,7 +607,7 @@ private:
             [this, &keys, &child_idx, left_border, right_border](uint64_t key_idx)
             {
                 assert(left_border <= key_idx && key_idx < right_border);
-                auto [search_idx, found] = binary_search(this->keys, keys[key_idx]);
+                auto [search_idx, found] = do_search(keys[key_idx]);
 
                 if (found)
                 {
@@ -661,18 +673,24 @@ public:
     friend struct ist_internal<T>;
 
     ist_internal_node(
-        pasl::pctl::parray<T> const& _keys,
-        pasl::pctl::parray<ist_internal_node<T>*> const& _children,
+        pasl::pctl::parray<T>&& _keys,
+        pasl::pctl::parray<ist_internal_node<T>*>&& _children,
         uint64_t keys_count
-    ) : keys(_keys), 
+    ) : keys(std::move(_keys)), 
         keys_exist(pasl::pctl::raw{}, keys.size(), true),
-        children(_children),
+        children(std::move(_children)),
         //id(build_id(keys, keys.size())),
         id(pasl::pctl::raw{}, 0),
         initial_size(keys_count),
         cur_size(keys_count),
         modifications_count(static_cast<uint64_t>(0))
     {
+        if (cur_size >= 50)
+        {
+            id = build_id(keys, keys.size());
+        }
+
+
         assert(keys.size() > 0 && "Empty key array passed to the constructor");
         assert(
             children.size() == 0 || 
@@ -793,7 +811,7 @@ public:
                 [this, &arr, &result, left_border, right_border](long key_idx)
                 {
                     assert(left_border <= key_idx && key_idx < right_border);
-                    auto [search_idx, found] = binary_search(this->keys, arr[key_idx]);
+                    auto [search_idx, found] = do_search(arr[key_idx]);
                     if (found)
                     {
                         assert(this->keys[search_idx] == arr[key_idx]);
@@ -870,7 +888,7 @@ public:
                 left_border, right_border,
                 [this, &keys](uint64_t remove_key_idx)
                 {
-                    auto [idx, found] = binary_search(this->keys, keys[remove_key_idx]);
+                    auto [idx, found] = do_search(keys[remove_key_idx]);
                     assert(
                         found && 0 <= idx && idx < this->keys.size() && 
                         this->keys[idx] == keys[remove_key_idx] && 

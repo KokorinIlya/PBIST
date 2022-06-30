@@ -48,7 +48,7 @@ static void bench_binary_search_uniform(benchmark::State& state)
 }
 
 BENCHMARK(bench_binary_search_uniform)
-    ->Args({10'000, 1'000'000, -1'000'000'000, 1'000'000'000})
+    ->Args({10'000, 10'000'000, -1'000'000'000, 1'000'000'000})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(5)
     ->Iterations(10)
@@ -59,9 +59,10 @@ static void bench_interpolation_search_uniform(benchmark::State& state)
     assert(false);
     
     uint64_t array_size = state.range(0);
-    uint32_t req_count = state.range(1);
-    int32_t keys_from = state.range(2);
-    int32_t keys_to = state.range(3);
+    uint64_t id_size = state.range(1);
+    uint32_t req_count = state.range(2);
+    int32_t keys_from = state.range(3);
+    int32_t keys_to = state.range(4);
 
     std::default_random_engine generator(time(nullptr));
     std::uniform_int_distribution<int32_t> elements_distribution(keys_from, keys_to);
@@ -70,7 +71,7 @@ static void bench_interpolation_search_uniform(benchmark::State& state)
     {
         //state.PauseTiming();
         pasl::pctl::parray<int32_t> keys = get_batch(array_size, generator, elements_distribution);
-        pasl::pctl::parray<uint64_t> id = build_id(keys, array_size);
+        pasl::pctl::parray<uint64_t> id = build_id(keys, id_size);
         std::vector<int32_t> requests;
         for (uint32_t i = 0; i < req_count; ++i)
         {
@@ -94,7 +95,14 @@ static void bench_interpolation_search_uniform(benchmark::State& state)
 }
 
 BENCHMARK(bench_interpolation_search_uniform)
-    ->Args({10'000, 1'000'000, -1'000'000'000, 1'000'000'000})
+    ->Args({10'000, 10'000, 10'000'000, -1'000'000'000, 1'000'000'000})
+    ->Unit(benchmark::kMillisecond)
+    ->Repetitions(5)
+    ->Iterations(10)
+    ->UseManualTime();
+
+BENCHMARK(bench_interpolation_search_uniform)
+    ->Args({10'000, 100, 10'000'000, -1'000'000'000, 1'000'000'000})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(5)
     ->Iterations(10)

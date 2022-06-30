@@ -45,8 +45,8 @@ static void bench_remove_par_exact(benchmark::State& state)
 BENCHMARK(bench_remove_par_exact)
     ->Args({100'000'000, 10'000'000, -100'000'000, 100'000'000})
     ->Unit(benchmark::kMillisecond)
-    ->Repetitions(1)
-    ->Iterations(1)
+    ->Repetitions(3)
+    ->Iterations(5)
     ->UseManualTime();
 
 static void bench_remove_par_approx(benchmark::State& state) 

@@ -46,8 +46,8 @@ static void bench_insert_par_exact(benchmark::State& state)
 BENCHMARK(bench_insert_par_exact)
     ->Args({100'000'000, 10'000'000, -100'000'000, 100'000'000})
     ->Unit(benchmark::kMillisecond)
-    ->Repetitions(1)
-    ->Iterations(1)
+    ->Repetitions(3)
+    ->Iterations(5)
     ->UseManualTime();
   
 static void bench_insert_par_approx(benchmark::State& state) 
@@ -133,7 +133,7 @@ static void bench_multi_insert_par(benchmark::State& state)
 }
 
 BENCHMARK(bench_multi_insert_par)
-    ->Args({100'000'000, 1'000, 10'000, -100'000'000, 100'000'000})
+    ->Args({100'000'000, 10'000, 1'000, -100'000'000, 100'000'000})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(1)
     ->Iterations(1)

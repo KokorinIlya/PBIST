@@ -78,8 +78,7 @@ ist_internal_node<T>* do_build_from_keys(
         );
         pasl::pctl::parray<ist_internal_node<T>*> children(raw_marker, 0);
 
-        ist_internal_node<T>* answer = new ist_internal_node<T>(reps, children, keys_count);  // TODO: move
-        return answer;
+        return new ist_internal_node<T>(std::move(reps), std::move(children), keys_count);
     }
 
     uint64_t block_size = static_cast<uint64_t>(std::sqrt(keys_count));
@@ -131,13 +130,7 @@ ist_internal_node<T>* do_build_from_keys(
             }
         }
     );
-    ist_internal_node<T>* answer = new ist_internal_node<T>(reps, children, keys_count); // TODO: move
-    for (uint64_t i = 0; i < children.size(); ++i)
-    {
-        children[i] = nullptr;
-    }
-    return answer; 
-    //return new ist_internal_node<T>(reps, children, keys_count); 
+    return new ist_internal_node<T>(std::move(reps), std::move(children), keys_count);
 }
 
 template <typename T>
