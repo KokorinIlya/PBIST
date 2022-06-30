@@ -71,5 +71,5 @@ Parallel-Batched Interpolation Search Tree
   * e.g. `CILK_NWORKERS=16  taskset 0xFFFF numactl --cpubind=0 --membind=0 ./build-release/benchmarks/run_benchmarks.out`
 
 ## Checking for memory leaks
-* `valgrind --leak-check=full --show-leak-kinds=all ./application.out 2> valgrind.out`
-* e.g., `valgrind --leak-check=full --show-leak-kinds=all ./build-debug/benchmarks/run_benchmarks.out --benchmark_filter=.* 2> valgrind.out`
+* `CILK_NWORKERS=N valgrind --leak-check=full --show-leak-kinds=all --log-file=valgrind.txt ./application.out`
+* e.g., `CILK_NWORKERS=16 valgrind --leak-check=full --show-leak-kinds=all --log-file=valgrind.txt ./build-debug/tests/run_tests.out --gtest_filter=*`
