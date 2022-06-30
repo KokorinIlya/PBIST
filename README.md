@@ -53,40 +53,23 @@ Parallel-Batched Interpolation Search Tree
 * `CILK_NWORKERS=16 ./build-release/benchmarks/run_benchmarks.out --benchmark_filter=.*` to run all benchmarks
 * Use `--benchmark_filter=bench_build.*` e.g. to specify benchmarks to run
 
-## Using tcmalloc
+## Using mimalloc
 * Run from the project directory (`/home/ubuntu/PBIST`)
-* `git clone https://github.com/google/tcmalloc.git`
-* `cd tcmalloc`
-* `bazel test //tcmalloc/...`
-* `vim tcmalloc/BUILD`
-* Copy and paste the following text to the end of the file
-```
-# This library provides standard tcmalloc as a shared (loadable) library.
-cc_binary(
-    name = "libtcmalloc.so",
-    srcs = [
-        "libc_override.h",
-        "libc_override_gcc_and_weak.h",
-        "libc_override_glibc.h",
-        "sampler.h",
-        "tcmalloc.cc",
-        "tcmalloc.h",
-    ],
-    copts = TCMALLOC_DEFAULT_COPTS,
-    visibility = ["//visibility:public"],
-    deps = tcmalloc_deps + [
-        ":common",
-    ],
-    linkshared = True,
-)
-```
-* `bazel build //tcmalloc:libtcmalloc.so`
-* `cd ..`
-* Set `LD_PRELOAD="tcmalloc/bazel-bin/tcmalloc/libtcmalloc.so"` before executing commands 
-  * e.g. `LD_PRELOAD="tcmalloc/bazel-bin/tcmalloc/libtcmalloc.so" CILK_NWORKERS=16 ./build-release/benchmarks/run_benchmarks.out`
+* `git clone https://github.com/microsoft/mimalloc.git`
+* `mkdir -p mimalloc/out/release`
+* `cd mimalloc/out/release`
+* `cmake ../..`
+* `make`
+* Set `LD_PRELOAD="mimalloc/out/release/libmimalloc.so"` before executing commands 
+  * e.g. `LD_PRELOAD="mimalloc/out/release/libmimalloc.so" CILK_NWORKERS=16 ./build-release/benchmarks/run_benchmarks.out`
+
 
 ## Controlling threads affinity
 * Use `CILK_NWORKERS=N taskset 0xFFFF numactl --interleave=all command` to execute `command` on cores [0-15], while allocating memory on any NUMA node
   * e.g. `CILK_NWORKERS=16  taskset 0xFFFF numactl --interleave=all ./build-release/benchmarks/run_benchmarks.out`
 * Use `CILK_NWORKERS=N  taskset 0xFFFF numactl --cpubind=0 --membind=0 command` to execute `command` on cores [0-15], while allocating memory only on `0` NUMA node
   * e.g. `CILK_NWORKERS=16  taskset 0xFFFF numactl --cpubind=0 --membind=0 ./build-release/benchmarks/run_benchmarks.out`
+
+## Checking for memory leaks
+* `CILK_NWORKERS=N valgrind --leak-check=full --show-leak-kinds=all --log-file=valgrind.txt ./application.out`
+* e.g., `CILK_NWORKERS=16 valgrind --leak-check=full --show-leak-kinds=all --log-file=valgrind.txt ./build-debug/tests/run_tests.out --gtest_filter=*`
