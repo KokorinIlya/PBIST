@@ -29,6 +29,6 @@
 
 | | Binary search (+ extra copies) | Interpolation search, size >= 50, id size = keys count |
 | ------------- | ------------- | ------------- | 
-| `CILK_NWORKERS = 1` | 8312 | 7614 |
-| `CILK_NWORKERS = 8` | 1122 | 1107 |
-| Speedup | 7.41 | 6.88 |
+| `CILK_NWORKERS = 1` | 8312 | 7495 |
+| `CILK_NWORKERS = 8` | 1122 | 1067 |
+| Speedup | 7.41 | 7.02 |
