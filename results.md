@@ -32,10 +32,10 @@
 | `CILK_NWORKERS = 8` | 423 |
 | Speedup | 6.93 |
 
-## Parallel Multi Insert
+## Parallel Multi Insert (10'000 batches, 1'000 keys each)
 
 | | Time (ms) | 
 | ------------- | ------------- |
-| `CILK_NWORKERS = 1` | 1682 |
-| `CILK_NWORKERS = 8` | 229 |
-| Speedup | 7.89 | 7.34 |
+| `CILK_NWORKERS = 1` | 55848 |
+| `CILK_NWORKERS = 8` | 10347 |
+| Speedup | 5.40 |
