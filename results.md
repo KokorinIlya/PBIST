@@ -14,7 +14,7 @@
 | ------------- | ------------- |
 | `CILK_NWORKERS = 1` | 1682 |
 | `CILK_NWORKERS = 8` | 229 |
-| Speedup | 7.89 | 7.34 |
+| Speedup | 7.34 |
 
 ## Parallel Single Insert
 
