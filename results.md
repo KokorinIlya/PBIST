@@ -20,9 +20,9 @@
 
 | | Time (ms) | 
 | ------------- | ------------- |
-| `CILK_NWORKERS = 1` | 1682 |
-| `CILK_NWORKERS = 8` | 229 |
-| Speedup | 7.89 | 7.34 |
+| `CILK_NWORKERS = 1` | 5032 |
+| `CILK_NWORKERS = 8` | 841 |
+| Speedup | 5.98 |
 
 ## Parallel Single Remove
 
