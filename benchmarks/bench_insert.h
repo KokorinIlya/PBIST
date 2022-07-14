@@ -18,13 +18,14 @@ static void bench_insert_par_exact(benchmark::State& state)
     uint64_t batch_size = state.range(1);
     int32_t keys_from = state.range(2);
     int32_t keys_to = state.range(3);
-    uint64_t size_threshold = 3;
+    uint64_t size_threshold = state.range(4);
 
     std::default_random_engine generator(time(nullptr));
     std::uniform_int_distribution<int32_t> elements_distribution(keys_from, keys_to);
 
     for (auto _ : state) 
     {
+        std::cout << "Iteration" << std::endl;
         //state.PauseTiming();
         pasl::pctl::parray<int32_t> keys = get_batch(tree_size, generator, elements_distribution);
         pasl::pctl::parray<int32_t> batch = get_batch(batch_size, generator, elements_distribution);
@@ -44,10 +45,10 @@ static void bench_insert_par_exact(benchmark::State& state)
 }
 
 BENCHMARK(bench_insert_par_exact)
-    ->Args({100'000'000, 10'000'000, -100'000'000, 100'000'000})
+    ->Args({100'000'000, 10'000'000, -100'000'000, 100'000'000, 10})
     ->Unit(benchmark::kMillisecond)
-    ->Repetitions(3)
-    ->Iterations(5)
+    ->Repetitions(10)
+    ->Iterations(1)
     ->UseManualTime();
   
 static void bench_insert_par_approx(benchmark::State& state) 
@@ -55,18 +56,22 @@ static void bench_insert_par_approx(benchmark::State& state)
     assert(false);
     
     uint64_t tree_size = state.range(0);
-    uint64_t batch_size = tree_size / 10;
+    uint32_t batch_size_div = state.range(1);
+    uint64_t size_threshold = state.range(2);
+
+    uint64_t batch_size = tree_size / batch_size_div;
     int32_t keys_from = -tree_size;
     int32_t keys_to = tree_size;
-    uint64_t size_threshold = 3;
+    double tree_add_p = 0.5;
+    double batch_add_p = tree_add_p / batch_size_div;
 
     std::default_random_engine generator(time(nullptr));
 
     for (auto _ : state) 
     {
         //state.PauseTiming();
-        pasl::pctl::parray<int32_t> keys = get_batch_with_prob(keys_from, keys_to, 0.5, generator);
-        pasl::pctl::parray<int32_t> batch = get_batch_with_prob(keys_from, keys_to, 0.05, generator);
+        pasl::pctl::parray<int32_t> keys = get_batch_with_prob(keys_from, keys_to, tree_add_p, generator);
+        pasl::pctl::parray<int32_t> batch = get_batch_with_prob(keys_from, keys_to, batch_add_p, generator);
         auto tree = ist_internal(keys, size_threshold);
         //state.ResumeTiming();
 
@@ -83,57 +88,7 @@ static void bench_insert_par_approx(benchmark::State& state)
 }
 
 BENCHMARK(bench_insert_par_approx)
-    ->Args({100'000'000})
-    ->Unit(benchmark::kMillisecond)
-    ->Repetitions(1)
-    ->Iterations(1)
-    ->UseManualTime();
-
-static void bench_multi_insert_par(benchmark::State& state) 
-{
-    assert(false);
-    
-    uint64_t tree_size = state.range(0);
-    uint64_t batch_count = state.range(1);
-    uint64_t batch_size = state.range(2);
-    int32_t keys_from = state.range(3);
-    int32_t keys_to = state.range(4);
-    uint64_t size_threshold = 3;
-
-    std::default_random_engine generator(time(nullptr));
-    std::uniform_int_distribution<int32_t> elements_distribution(keys_from, keys_to);
-
-    for (auto _ : state) 
-    {
-        std::cout << "Iteration" << std::endl;
-        pasl::pctl::parray<int32_t> keys = get_batch(tree_size, generator, elements_distribution);
-        auto tree = ist_internal(keys, size_threshold);
-
-        double total_time = 0.0;
-        for (uint64_t i = 0; i < batch_count; ++i)
-        {
-            pasl::pctl::parray<int32_t> batch = get_batch(batch_size, generator, elements_distribution);
-            auto start = std::chrono::high_resolution_clock::now();
-
-            pasl::pctl::parray<bool> result = tree.insert(batch);
-            benchmark::DoNotOptimize(result);
-            benchmark::ClobberMemory();
-
-            auto end = std::chrono::high_resolution_clock::now();
-            auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
-            total_time += elapsed_seconds.count();
-
-            pasl::pctl::parray<bool> del_result = tree.remove(batch);
-            benchmark::DoNotOptimize(del_result);
-            benchmark::ClobberMemory();
-        }
-        
-        state.SetIterationTime(total_time);
-    }
-}
-
-BENCHMARK(bench_multi_insert_par)
-    ->Args({100'000'000, 10'000, 1'000, -100'000'000, 100'000'000})
+    ->Args({100'000'000, 10, 10})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(1)
     ->Iterations(1)

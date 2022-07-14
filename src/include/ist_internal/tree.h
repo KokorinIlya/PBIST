@@ -32,7 +32,7 @@ public:
                 return false;
             }
             assert(cur_node->keys.size() == cur_node->keys_exist.size());
-            auto [idx, found] = binary_search(cur_node->keys, search_key);
+            auto [idx, found] = cur_node->do_search(search_key);
             if (found)
             {
                 assert(cur_node->keys[idx] == search_key);
@@ -98,6 +98,7 @@ public:
                 result[idx] = !result[idx];
             } 
         );
+
         pasl::pctl::parray<T> insert_keys = pasl::pctl::filteri(
             keys.begin(), keys.end(),
             [&result](uint64_t idx, T const&)
@@ -131,9 +132,7 @@ public:
         {
             return pasl::pctl::parray<bool>(raw_marker, keys.size(), false);
         }
-        /*
-        TODO: try non-batch contains
-        */
+
         pasl::pctl::parray<bool> result = this->contains(keys);
         assert(result.size() == keys.size());
 

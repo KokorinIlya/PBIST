@@ -15,7 +15,7 @@ static void bench_build_exact(benchmark::State& state)
     uint64_t size = state.range(0);
     int32_t keys_from = state.range(1);
     int32_t keys_to = state.range(2);
-    uint64_t size_threshold = 3;
+    uint64_t size_threshold = state.range(3);
 
     std::default_random_engine generator(time(nullptr));
     std::uniform_int_distribution<int32_t> elements_distribution(keys_from, keys_to);
@@ -41,7 +41,7 @@ static void bench_build_exact(benchmark::State& state)
 }
 
 BENCHMARK(bench_build_exact)
-    ->Args({100'000'000, -1'000'000'000, 1'000'000'000})
+    ->Args({100'000'000, -1'000'000'000, 1'000'000'000, 10})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(1)
     ->Iterations(5)
@@ -52,16 +52,18 @@ static void bench_build_approx(benchmark::State& state)
     assert(false);
     
     uint64_t size = state.range(0);
+    uint64_t size_threshold = state.range(1);
+
     int32_t keys_from = -size;
     int32_t keys_to = size;
-    uint64_t size_threshold = 3;
+    double tree_add_p = 0.5;
 
     std::default_random_engine generator(time(nullptr));
 
     for (auto _ : state) 
     {
         //state.PauseTiming();
-        pasl::pctl::parray<int32_t> keys = get_batch_with_prob(keys_from, keys_to, 0.5, generator);
+        pasl::pctl::parray<int32_t> keys = get_batch_with_prob(keys_from, keys_to, tree_add_p, generator);
         //state.ResumeTiming();
 
         auto start = std::chrono::high_resolution_clock::now();
@@ -79,7 +81,7 @@ static void bench_build_approx(benchmark::State& state)
 }
 
 BENCHMARK(bench_build_approx)
-    ->Args({100'000'000})
+    ->Args({100'000'000, 10})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(1)
     ->Iterations(5)

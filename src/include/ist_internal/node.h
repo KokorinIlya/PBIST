@@ -303,14 +303,32 @@ private:
         else
         {
             assert(children.size() == keys.size() + 1);
-            // TODO: specify time complexity of both tasks
-            pasl::pctl::granularity::fork2(
-                [this, &keys_holder, &borders, left, right]()
+
+            pasl::pctl::granularity::cstmt(
+                [this]()
                 {
-                    this->do_get_keys_from_cur_node(keys_holder, borders, left, right);
+                    return this->cur_size;
+                },
+                [this]()
+                {
+                    return this->cur_size;
                 },
                 [this, &keys_holder, &borders, left, right]()
                 {
+                    pasl::pctl::granularity::fork2(
+                        [this, &keys_holder, &borders, left, right]()
+                        {
+                            this->do_get_keys_from_cur_node(keys_holder, borders, left, right);
+                        },
+                        [this, &keys_holder, &borders, left, right]()
+                        {
+                            this->do_get_keys_from_children(keys_holder, borders, left, right);
+                        }
+                    );
+                },
+                [this, &keys_holder, &borders, left, right]()
+                {
+                    this->do_get_keys_from_cur_node(keys_holder, borders, left, right);
                     this->do_get_keys_from_children(keys_holder, borders, left, right);
                 }
             );
@@ -431,6 +449,7 @@ private:
         pasl::pctl::parray<uint64_t> const& range_begins = range_borders.first;
         pasl::pctl::parray<uint64_t> const& range_ends = range_borders.second;
 
+        // TODO: complexity
         pasl::pctl::parallel_for(
             static_cast<uint64_t>(0), static_cast<uint64_t>(range_begins.size()),
             [this, &range_begins, &range_ends, &arr, &result, &child_idx, left_border, right_border](uint64_t i)
