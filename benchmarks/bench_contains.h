@@ -96,7 +96,7 @@ BENCHMARK(bench_contains_par_approx)
     ->Iterations(1)
     ->UseManualTime();
 
-static void bench_contains_par_single(benchmark::State& state) 
+static void bench_contains_multi_single(benchmark::State& state) 
 {
     assert(false);
     
@@ -131,7 +131,7 @@ static void bench_contains_par_single(benchmark::State& state)
     }
 }
 
-BENCHMARK(bench_contains_par_single)
+BENCHMARK(bench_contains_multi_single)
     ->Args({100'000'000, 10'000'000, -1'000'000'000, 1'000'000'000, 10})
     ->Unit(benchmark::kMillisecond)
     ->Repetitions(10)
