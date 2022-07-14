@@ -10,25 +10,32 @@
 
 ## Parallel Contains
 
-| | Binary search | Interpolation search, size >= 50, id size = keys count |
-| ------------- | ------------- | ------------- | 
-| `CILK_NWORKERS = 1` | 4033 | 3542 |
-| `CILK_NWORKERS = 8` | 511 | 468 |
-| Speedup | 7.89 | 7.57 |
+| | Time (ms) | 
+| ------------- | ------------- |
+| `CILK_NWORKERS = 1` | 1682 |
+| `CILK_NWORKERS = 8` | 229 |
+| Speedup | 7.34 |
 
-## Parallel Insert
+## Parallel Single Insert
 
-| | Binary search | Interpolation search, size >= 50, id size = keys count |
-| ------------- | ------------- | ------------- | 
-| `CILK_NWORKERS = 1` | 9026 | 8270 |
-| `CILK_NWORKERS = 8` | 1497 | 1356 |
-| Speedup | 6.03 | 6.10 |
+| | Time (ms) | 
+| ------------- | ------------- |
+| `CILK_NWORKERS = 1` | 5032 |
+| `CILK_NWORKERS = 8` | 841 |
+| Speedup | 5.98 |
 
+## Parallel Single Remove
 
-## Parallel Remove
+| | Time (ms) | 
+| ------------- | ------------- |
+| `CILK_NWORKERS = 1` | 2930 |
+| `CILK_NWORKERS = 8` | 423 |
+| Speedup | 6.93 |
 
-| | Binary search | Interpolation search, size >= 50, id size = keys count |
-| ------------- | ------------- | ------------- | 
-| `CILK_NWORKERS = 1` | 8312 | 7614 |
-| `CILK_NWORKERS = 8` | 1122 | 1107 |
-| Speedup | 7.41 | 6.88 |
+## Parallel Multi Insert (10'000 batches, 1'000 keys each)
+
+| | Time (ms) | 
+| ------------- | ------------- |
+| `CILK_NWORKERS = 1` | 55848 |
+| `CILK_NWORKERS = 8` | 10347 |
+| Speedup | 5.40 |
